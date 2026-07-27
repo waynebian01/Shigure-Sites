@@ -134,9 +134,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .specialization-tabs button { border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 650; }
 .specialization-tabs button[aria-selected="true"] { border-color: var(--teal); background: var(--mist); color: var(--teal-dark); }
 .specialization-tabs sup { margin-left: 6px; color: var(--teal-dark); font: 600 9px/1 var(--font-geist-mono), monospace; }
-.explorer-shell { min-height: 640px; display: grid; grid-template-columns: minmax(320px, .72fr) minmax(480px, 1.4fr); border: 1px solid var(--ink); border-top: 0; background: var(--surface); }
-.share-tabs { border-right: 1px solid var(--ink); background: var(--paper); }
-.list-label { height: 43px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); color: var(--muted); font: 600 9px/1 var(--font-geist-mono), monospace; letter-spacing: 1.2px; text-transform: uppercase; }
+.explorer-shell { height: 720px; min-height: 0; display: grid; grid-template-columns: minmax(320px, .72fr) minmax(480px, 1.4fr); border: 1px solid var(--ink); border-top: 0; background: var(--surface); }
+.share-tabs { min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-right: 1px solid var(--ink); background: var(--paper); scrollbar-color: var(--teal) var(--paper); }
+.list-label { position: sticky; top: 0; z-index: 2; height: 43px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: var(--paper); color: var(--muted); font: 600 9px/1 var(--font-geist-mono), monospace; letter-spacing: 1.2px; text-transform: uppercase; }
 .share-tab { width: 100%; min-height: 88px; display: grid; grid-template-columns: 43px 1fr auto; align-items: center; gap: 12px; padding: 16px 18px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; cursor: pointer; position: relative; }
 .share-tab::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: transparent; }
 .share-tab:hover { background: var(--surface-hover); }
@@ -149,7 +149,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .tab-size { color: var(--muted); font: 600 10px/1 var(--font-geist-mono), monospace; }
 .empty-state, .preview-empty { min-height: 260px; display: grid; place-items: center; text-align: center; color: var(--muted); line-height: 1.8; }
 .empty-state small, .preview-empty small { color: var(--subtle); }
-.preview-pane { min-width: 0; padding: clamp(24px, 4vw, 52px); background: var(--surface); }
+.preview-pane { min-width: 0; min-height: 0; padding: clamp(24px, 4vw, 52px); overflow-y: auto; overscroll-behavior: contain; background: var(--surface); scrollbar-color: var(--teal) var(--surface); }
 .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .preview-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 9px; }
 .preview-kicker { color: var(--teal-dark); font: 750 9px/1 var(--font-geist-mono), monospace; letter-spacing: 1.7px; }
@@ -230,8 +230,9 @@ footer > span { text-align: right; font: 600 9px/1 var(--font-geist-mono), monos
   .header-actions { gap: 12px; }
   .theme-switcher small { display: none; }
   .theme-switcher button { min-width: 30px; padding-inline: 7px; }
-  .explorer-shell { grid-template-columns: 1fr; }
+  .explorer-shell { height: auto; grid-template-columns: 1fr; }
   .share-tabs { max-height: 365px; overflow: auto; border-right: 0; border-bottom: 1px solid var(--ink); }
+  .preview-pane { overflow: visible; }
   .file-details { grid-template-columns: 1fr 1fr; }
   .file-details dl:nth-child(2) { border-right: 0; }
   .file-details dl:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
