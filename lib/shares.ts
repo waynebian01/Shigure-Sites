@@ -17,7 +17,7 @@ export type ShareRecord = {
 
 type RuntimeEnv = { DB: D1Database; FILES: R2Bucket };
 
-const SEED_VERSION = "2026-07-19-json-metadata-v2";
+const SEED_VERSION = "2026-07-27-official-one-button-only-v3";
 
 function bindings() {
   const runtime = env as unknown as Partial<RuntimeEnv>;
@@ -31,6 +31,14 @@ async function replaceBuiltInSamples() {
     .bind("seed_version")
     .first<{ value: string }>();
   if (currentSeed?.value === SEED_VERSION) return;
+
+  const nonOfficialShares = await DB.prepare(
+    "SELECT r2_key FROM shares WHERE filename NOT LIKE ?",
+  ).bind("%官方一键%").all<{ r2_key: string }>();
+  await Promise.all(
+    nonOfficialShares.results.map((share) => FILES.delete(String(share.r2_key))),
+  );
+  await DB.prepare("DELETE FROM shares WHERE filename NOT LIKE ?").bind("%官方一键%").run();
 
   const previousSamples = await DB.prepare(
     "SELECT r2_key FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%'",
