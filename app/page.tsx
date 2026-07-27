@@ -335,7 +335,7 @@ export default function Home() {
           <span>Shigure</span>
         </a>
         <div className="header-actions">
-          <span className="format-note"><i /> JSON ONLY · MAX 200 KB</span>
+          <span className="format-note"><i /> ARASAKA CORPORATION SHARING PLATFORM</span>
           <div className="theme-switcher" role="group" aria-label="外观主题">
             {themeOptions.map((option) => (
               <button
