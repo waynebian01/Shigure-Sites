@@ -41,8 +41,8 @@
 :root[data-theme="dark"] {
   --paper: rgb(0, 0, 0);
   --paper-deep: rgb(0, 0, 0);
-  --ink: rgb(252, 238, 10);
-  --muted: rgba(252, 238, 10, .68);
+  --ink: rgb(255, 255, 255);
+  --muted: rgba(255, 255, 255, .7);
   --line: rgba(252, 238, 10, .28);
   --teal: rgb(252, 238, 10);
   --teal-dark: rgb(252, 238, 10);
@@ -52,8 +52,8 @@
   --surface-soft: rgba(252, 238, 10, .06);
   --surface-hover: rgba(252, 238, 10, .1);
   --topbar: rgba(0, 0, 0, .94);
-  --placeholder: rgba(252, 238, 10, .48);
-  --subtle: rgba(252, 238, 10, .55);
+  --placeholder: rgba(255, 255, 255, .48);
+  --subtle: rgba(255, 255, 255, .56);
   --field-valid: rgba(252, 238, 10, .1);
   --talent-surface: rgba(252, 238, 10, .08);
   --talent-code: rgb(0, 0, 0);
@@ -70,10 +70,10 @@
   --shadow: rgba(0, 0, 0, .72);
   --backdrop: rgba(0, 0, 0, .86);
   --code-line: rgba(252, 238, 10, .25);
-  --code-muted: rgba(252, 238, 10, .62);
-  --code-text: rgb(252, 238, 10);
+  --code-muted: rgba(255, 255, 255, .64);
+  --code-text: rgb(255, 255, 255);
   --code-scroll: rgba(252, 238, 10, .38);
-  --toast-dismiss: rgba(252, 238, 10, .68);
+  --toast-dismiss: rgba(255, 255, 255, .7);
 }
 
 * { box-sizing: border-box; }
