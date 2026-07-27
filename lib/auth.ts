@@ -4,7 +4,7 @@ import { ensureStorage, storageBindings } from "./shares";
 
 const SESSION_COOKIE = "shigure_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const PASSWORD_ITERATIONS = 210_000;
+const PASSWORD_ITERATIONS = 100_000;
 const encoder = new TextEncoder();
 
 export type AuthUser = {
