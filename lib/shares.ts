@@ -1,4 +1,8 @@
 import { env } from "cloudflare:workers";
+import {
+  BUILT_IN_SAMPLE_ID_PATTERNS,
+  BUILT_IN_SAMPLE_WHERE,
+} from "./built-in-samples";
 
 export type ShareRecord = {
   id: string;
@@ -18,7 +22,7 @@ export type ShareRecord = {
 
 type RuntimeEnv = { DB: D1Database; FILES: R2Bucket };
 
-const SEED_VERSION = "2026-07-27-remove-official-modules-v5";
+const SEED_VERSION = "2026-07-27-remove-official-modules-v6";
 
 function bindings() {
   const runtime = env as unknown as Partial<RuntimeEnv>;
@@ -34,16 +38,16 @@ async function replaceBuiltInSamples() {
   if (currentSeed?.value === SEED_VERSION) return;
 
   const previousSamples = await DB.prepare(
-    "SELECT r2_key FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%' OR filename LIKE ?",
-  ).bind("%官方一键%").all<{ r2_key: string }>();
+    `SELECT r2_key FROM shares WHERE ${BUILT_IN_SAMPLE_WHERE}`,
+  ).bind(...BUILT_IN_SAMPLE_ID_PATTERNS).all<{ r2_key: string }>();
   await Promise.all(
     previousSamples.results.map((sample: { r2_key: string }) =>
       FILES.delete(String(sample.r2_key)).catch(() => undefined),
     ),
   );
   await DB.prepare(
-    "DELETE FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%' OR filename LIKE ?",
-  ).bind("%官方一键%").run();
+    `DELETE FROM shares WHERE ${BUILT_IN_SAMPLE_WHERE}`,
+  ).bind(...BUILT_IN_SAMPLE_ID_PATTERNS).run();
   await DB.prepare(`INSERT INTO app_metadata (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value`)
     .bind("seed_version", SEED_VERSION)
