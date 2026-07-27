@@ -1,6 +1,7 @@
 import { getShare, storageBindings } from "../../../../lib/shares";
 import { getChatGPTUser } from "../../../chatgpt-auth";
 import { isAdminEmail } from "../../../../lib/admin";
+import { ensureUser } from "../../../../lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -23,16 +24,17 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
   try {
     const user = await getChatGPTUser();
     if (!user) {
-      return Response.json({ error: "请先使用管理员账户登录" }, { status: 401 });
-    }
-    if (!isAdminEmail(user.email)) {
-      return Response.json({ error: "当前账户没有管理员权限" }, { status: 403 });
+      return Response.json({ error: "请先登录" }, { status: 401 });
     }
 
     const { id } = await context.params;
     const share = await getShare(id);
     if (!share) {
       return Response.json({ error: "没有找到这份分享" }, { status: 404 });
+    }
+    const profile = await ensureUser(user);
+    if (!isAdminEmail(user.email) && share.ownerUserId !== profile.id) {
+      return Response.json({ error: "你只能删除自己分享的 JSON" }, { status: 403 });
     }
 
     const { DB, FILES } = storageBindings();

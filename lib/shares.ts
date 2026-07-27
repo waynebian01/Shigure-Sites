@@ -13,6 +13,7 @@ export type ShareRecord = {
   size: number;
   r2Key: string;
   createdAt: number;
+  ownerUserId: string | null;
 };
 
 type RuntimeEnv = { DB: D1Database; FILES: R2Bucket };
@@ -32,19 +33,13 @@ async function replaceBuiltInSamples() {
     .first<{ value: string }>();
   if (currentSeed?.value === SEED_VERSION) return;
 
-  const nonOfficialShares = await DB.prepare(
-    "SELECT r2_key FROM shares WHERE filename NOT LIKE ?",
-  ).bind("%官方一键%").all<{ r2_key: string }>();
-  await Promise.all(
-    nonOfficialShares.results.map((share) => FILES.delete(String(share.r2_key))),
-  );
-  await DB.prepare("DELETE FROM shares WHERE filename NOT LIKE ?").bind("%官方一键%").run();
-
   const previousSamples = await DB.prepare(
     "SELECT r2_key FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%'",
   ).all<{ r2_key: string }>();
   await Promise.all(
-    previousSamples.results.map((sample) => FILES.delete(String(sample.r2_key)).catch(() => undefined)),
+    previousSamples.results.map((sample: { r2_key: string }) =>
+      FILES.delete(String(sample.r2_key)).catch(() => undefined),
+    ),
   );
   await DB.prepare("DELETE FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%'").run();
 
@@ -84,6 +79,12 @@ async function replaceBuiltInSamples() {
 export async function ensureStorage() {
   const { DB } = bindings();
   await DB.batch([
+    DB.prepare(`CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS shares (
       id TEXT PRIMARY KEY,
       filename TEXT NOT NULL,
@@ -94,7 +95,8 @@ export async function ensureStorage() {
       description TEXT NOT NULL,
       size INTEGER NOT NULL,
       r2_key TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      owner_user_id TEXT REFERENCES users(id)
     )`),
     DB.prepare("CREATE INDEX IF NOT EXISTS shares_created_at_idx ON shares (created_at DESC)"),
     DB.prepare(`CREATE TABLE IF NOT EXISTS app_metadata (
@@ -102,6 +104,11 @@ export async function ensureStorage() {
       value TEXT NOT NULL
     )`),
   ]);
+  const shareColumns = await DB.prepare("PRAGMA table_info(shares)").all<{ name: string }>();
+  if (!shareColumns.results.some((column: { name: string }) => column.name === "owner_user_id")) {
+    await DB.prepare("ALTER TABLE shares ADD COLUMN owner_user_id TEXT REFERENCES users(id)").run();
+  }
+  await DB.prepare("CREATE INDEX IF NOT EXISTS shares_owner_user_id_idx ON shares (owner_user_id, created_at DESC)").run();
   await replaceBuiltInSamples();
 }
 
@@ -117,6 +124,7 @@ function mapRow(row: Record<string, unknown>): ShareRecord {
     size: Number(row.size),
     r2Key: String(row.r2_key),
     createdAt: Number(row.created_at),
+    ownerUserId: row.owner_user_id ? String(row.owner_user_id) : null,
   };
 }
 
@@ -124,7 +132,7 @@ export async function listShares() {
   await ensureStorage();
   const { DB } = bindings();
   const result = await DB.prepare("SELECT * FROM shares ORDER BY created_at DESC LIMIT 100").all();
-  return result.results.map((row) => mapRow(row as Record<string, unknown>));
+  return result.results.map((row: unknown) => mapRow(row as Record<string, unknown>));
 }
 
 export async function getShare(id: string) {
@@ -132,6 +140,15 @@ export async function getShare(id: string) {
   const { DB } = bindings();
   const row = await DB.prepare("SELECT * FROM shares WHERE id = ?").bind(id).first<Record<string, unknown>>();
   return row ? mapRow(row) : null;
+}
+
+export async function listSharesByOwner(ownerUserId: string) {
+  await ensureStorage();
+  const { DB } = bindings();
+  const result = await DB.prepare(
+    "SELECT * FROM shares WHERE owner_user_id = ? ORDER BY created_at DESC LIMIT 100",
+  ).bind(ownerUserId).all();
+  return result.results.map((row: unknown) => mapRow(row as Record<string, unknown>));
 }
 
 export function storageBindings() {

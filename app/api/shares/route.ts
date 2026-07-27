@@ -1,11 +1,18 @@
 import { listShares, storageBindings } from "../../../lib/shares";
 import { validateModuleJson } from "../../../lib/module-json";
 import { getModuleMetadata } from "../../../lib/module-metadata";
+import { getChatGPTUser } from "../../chatgpt-auth";
+import { ensureUser } from "../../../lib/users";
 
 export const dynamic = "force-dynamic";
 
 function publicShare(share: Awaited<ReturnType<typeof listShares>>[number]) {
-  return { ...share, r2Key: undefined, createdAt: new Date(share.createdAt).toISOString() };
+  return {
+    ...share,
+    r2Key: undefined,
+    ownerUserId: undefined,
+    createdAt: new Date(share.createdAt).toISOString(),
+  };
 }
 
 export async function GET() {
@@ -21,6 +28,11 @@ export async function GET() {
 export async function POST(request: Request) {
   let r2Key = "";
   try {
+    const authenticatedUser = await getChatGPTUser();
+    if (!authenticatedUser) {
+      return Response.json({ error: "请先登录，再分享 JSON" }, { status: 401 });
+    }
+    const owner = await ensureUser(authenticatedUser);
     const form = await request.formData();
     const file = form.get("file");
     const fields = {
@@ -48,9 +60,9 @@ export async function POST(request: Request) {
     r2Key = `shares/${id}/${safeFilename}`;
     await FILES.put(r2Key, text, { httpMetadata: { contentType: "application/json; charset=utf-8" } });
     await DB.prepare(`INSERT INTO shares
-      (id, filename, author, version, profession, specialization, description, size, r2_key, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, safeFilename, metadata.author, metadata.version, metadata.profession, metadata.specialization, fields.description, new TextEncoder().encode(text).byteLength, r2Key, Date.now())
+      (id, filename, author, version, profession, specialization, description, size, r2_key, created_at, owner_user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, safeFilename, metadata.author, metadata.version, metadata.profession, metadata.specialization, fields.description, new TextEncoder().encode(text).byteLength, r2Key, Date.now(), owner.id)
       .run();
     return Response.json({ id }, { status: 201 });
   } catch (error) {

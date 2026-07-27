@@ -11,5 +11,7 @@ export async function getAdminStatus() {
   return {
     authenticated: Boolean(user),
     isAdmin: Boolean(user && isAdminEmail(user.email)),
+    email: user?.email ?? null,
+    displayName: user?.displayName ?? null,
   };
 }

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ModuleHeader, validateModuleJson } from "../lib/module-json";
@@ -17,9 +18,11 @@ type Share = {
   createdAt: string;
 };
 
-type AdminStatus = {
+type SessionStatus = {
   authenticated: boolean;
   isAdmin: boolean;
+  email: string | null;
+  displayName: string | null;
 };
 
 type ThemePreference = "system" | "light" | "dark";
@@ -97,7 +100,7 @@ export default function Home() {
   const [isJsonLoading, setIsJsonLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [adminStatus, setAdminStatus] = useState<AdminStatus | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Share | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [notice, setNotice] = useState("");
@@ -150,9 +153,9 @@ export default function Home() {
     fetch("/api/admin/session", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) throw new Error("无法读取管理员状态");
-        setAdminStatus((await response.json()) as AdminStatus);
+        setSessionStatus((await response.json()) as SessionStatus);
       })
-      .catch(() => setAdminStatus({ authenticated: false, isAdmin: false }));
+      .catch(() => setSessionStatus({ authenticated: false, isAdmin: false, email: null, displayName: null }));
   }, []);
 
   useEffect(() => {
@@ -281,7 +284,7 @@ export default function Home() {
   }
 
   async function handleDelete() {
-    if (!pendingDelete || !adminStatus?.isAdmin) return;
+    if (!pendingDelete || !sessionStatus?.isAdmin) return;
     setIsDeleting(true);
     setNotice("");
     try {
@@ -346,17 +349,28 @@ export default function Home() {
               </button>
             ))}
           </div>
-          {adminStatus?.isAdmin ? (
-            <div className="admin-session">
-              <span>管理员</span>
+          {sessionStatus?.authenticated ? (
+            <div className="account-session">
+              {sessionStatus.isAdmin && <span>管理员</span>}
+              <a className="account-link" href="/profile" title={sessionStatus.email ?? undefined}>
+                {sessionStatus.displayName ?? "个人中心"}
+              </a>
               <a href="/signout-with-chatgpt?return_to=%2F">退出</a>
             </div>
           ) : (
-            <a className="admin-login" href="/signin-with-chatgpt?return_to=%2F">
-              管理员登录
-            </a>
+            <nav className="auth-links" aria-label="用户账户">
+              <a href="/login">登录</a>
+              <a href="/register">注册</a>
+            </nav>
           )}
-          <button className="primary-button" type="button" onClick={() => { setNotice(""); setIsModalOpen(true); }}>
+          <button className="primary-button" type="button" onClick={() => {
+            if (!sessionStatus?.authenticated) {
+              window.location.href = "/login";
+              return;
+            }
+            setNotice("");
+            setIsModalOpen(true);
+          }}>
             <span aria-hidden="true">＋</span> 分享 JSON
           </button>
         </div>
@@ -466,7 +480,7 @@ export default function Home() {
                     <a className="download-button" href={`/api/shares/${selected.id}/download`} download>
                       下载 <span aria-hidden="true">↓</span>
                     </a>
-                    {adminStatus?.isAdmin && (
+                    {sessionStatus?.isAdmin && (
                       <button className="delete-button" type="button" onClick={() => setPendingDelete(selected)}>
                         删除
                       </button>

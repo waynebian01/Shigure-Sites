@@ -1,0 +1,1 @@
+CREATE INDEX `shares_owner_user_id_idx` ON `shares` (`owner_user_id`,`created_at`);
