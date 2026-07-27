@@ -14,6 +14,7 @@ export type ShareRecord = {
   size: number;
   r2Key: string;
   createdAt: number;
+  expiresAt: number | null;
   ownerUserId: string | null;
 };
 
@@ -110,6 +111,7 @@ export async function ensureStorage() {
       size INTEGER NOT NULL,
       r2_key TEXT NOT NULL,
       created_at INTEGER NOT NULL,
+      expires_at INTEGER,
       owner_user_id TEXT REFERENCES users(id)
     )`),
     DB.prepare("CREATE INDEX IF NOT EXISTS shares_created_at_idx ON shares (created_at DESC)"),
@@ -140,8 +142,33 @@ export async function ensureStorage() {
   if (!shareColumns.results.some((column: { name: string }) => column.name === "owner_user_id")) {
     await DB.prepare("ALTER TABLE shares ADD COLUMN owner_user_id TEXT REFERENCES users(id)").run();
   }
-  await DB.prepare("CREATE INDEX IF NOT EXISTS shares_owner_user_id_idx ON shares (owner_user_id, created_at DESC)").run();
+  if (!shareColumns.results.some((column: { name: string }) => column.name === "expires_at")) {
+    await DB.prepare("ALTER TABLE shares ADD COLUMN expires_at INTEGER").run();
+  }
+  await DB.batch([
+    DB.prepare("CREATE INDEX IF NOT EXISTS shares_owner_user_id_idx ON shares (owner_user_id, created_at DESC)"),
+    DB.prepare("CREATE INDEX IF NOT EXISTS shares_expires_at_idx ON shares (expires_at)"),
+  ]);
   await replaceBuiltInSamples();
+  await purgeExpiredShares();
+}
+
+async function purgeExpiredShares() {
+  const { DB, FILES } = bindings();
+  const now = Date.now();
+  const expired = await DB.prepare(
+    "SELECT r2_key FROM shares WHERE expires_at IS NOT NULL AND expires_at <= ?",
+  ).bind(now).all<{ r2_key: string }>();
+  await Promise.all(
+    expired.results.map((share: { r2_key: string }) =>
+      FILES.delete(String(share.r2_key)).catch(() => undefined),
+    ),
+  );
+  if (expired.results.length > 0) {
+    await DB.prepare("DELETE FROM shares WHERE expires_at IS NOT NULL AND expires_at <= ?")
+      .bind(now)
+      .run();
+  }
 }
 
 function mapRow(row: Record<string, unknown>): ShareRecord {
@@ -157,6 +184,7 @@ function mapRow(row: Record<string, unknown>): ShareRecord {
     size: Number(row.size),
     r2Key: String(row.r2_key),
     createdAt: Number(row.created_at),
+    expiresAt: row.expires_at ? Number(row.expires_at) : null,
     ownerUserId: row.owner_user_id ? String(row.owner_user_id) : null,
   };
 }

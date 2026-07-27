@@ -4,6 +4,7 @@ import { getModuleMetadata } from "../../../lib/module-metadata";
 import { getCurrentUser } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
+const ANONYMOUS_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 function publicShare(share: Awaited<ReturnType<typeof listShares>>[number]) {
   return {
@@ -28,9 +29,6 @@ export async function POST(request: Request) {
   let r2Key = "";
   try {
     const owner = await getCurrentUser();
-    if (!owner) {
-      return Response.json({ error: "请先登录，再分享 JSON" }, { status: 401 });
-    }
     const form = await request.formData();
     const file = form.get("file");
     const fields = {
@@ -54,13 +52,15 @@ export async function POST(request: Request) {
 
     const { DB, FILES } = storageBindings();
     const id = crypto.randomUUID();
+    const createdAt = Date.now();
+    const expiresAt = owner ? null : createdAt + ANONYMOUS_RETENTION_MS;
     const safeFilename = file.name.replace(/[^a-zA-Z0-9._\-\u4e00-\u9fff]/g, "-").slice(0, 100) || "shared.json";
     r2Key = `shares/${id}/${safeFilename}`;
     await FILES.put(r2Key, text, { httpMetadata: { contentType: "application/json; charset=utf-8" } });
     await DB.prepare(`INSERT INTO shares
-      (id, filename, author, version, profession, specialization, description, size, r2_key, created_at, owner_user_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, safeFilename, metadata.author, metadata.version, metadata.profession, metadata.specialization, fields.description, new TextEncoder().encode(text).byteLength, r2Key, Date.now(), owner.id)
+      (id, filename, author, version, profession, specialization, description, size, r2_key, created_at, expires_at, owner_user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, safeFilename, metadata.author, metadata.version, metadata.profession, metadata.specialization, fields.description, new TextEncoder().encode(text).byteLength, r2Key, createdAt, expiresAt, owner?.id ?? null)
       .run();
     return Response.json({ id }, { status: 201 });
   } catch (error) {

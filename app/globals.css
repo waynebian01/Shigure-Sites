@@ -218,6 +218,8 @@ footer > span { text-align: right; font: 600 9px/1 var(--font-geist-mono), monos
 .modal-header { padding: 25px 28px 21px; display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid var(--line); }
 .modal-header h2 { margin: 8px 0 0; font-size: 27px; letter-spacing: -1.2px; }
 .modal-header button { width: 36px; height: 36px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 23px; }
+.share-retention-note { margin: 0; padding: 11px 28px; border-bottom: 1px solid var(--line); background: var(--surface-soft); color: var(--muted); font-size: 10px; line-height: 1.6; }
+.share-retention-note::before { content: "◇"; margin-right: 7px; color: var(--teal-dark); }
 .share-modal form { padding: 25px 28px 30px; }
 .module-metadata { margin-bottom: 18px; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); background: var(--surface); }
 .module-metadata dl { min-width: 0; margin: 0; padding: 13px 12px; border-right: 1px solid var(--line); }
@@ -364,7 +366,7 @@ footer > span { text-align: right; font: 600 9px/1 var(--font-geist-mono), monos
   .code-window pre { padding: 18px 15px; font-size: 11px; }
   .modal-backdrop { padding: 0; place-items: end center; }
   .share-modal { max-height: 92vh; border: 0; }
-  .modal-header, .share-modal form { padding-inline: 20px; }
+  .modal-header, .share-modal form, .share-retention-note { padding-inline: 20px; }
   .module-metadata { grid-template-columns: 1fr 1fr; }
   .module-metadata dl:nth-child(2) { border-right: 0; }
   .module-metadata dl:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }

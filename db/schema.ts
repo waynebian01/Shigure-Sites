@@ -41,9 +41,11 @@ export const shares = sqliteTable(
     size: integer("size").notNull(),
     r2Key: text("r2_key").notNull(),
     createdAt: integer("created_at").notNull(),
+    expiresAt: integer("expires_at"),
     ownerUserId: text("owner_user_id").references(() => users.id),
   },
   (table) => [
     index("shares_owner_user_id_idx").on(table.ownerUserId, table.createdAt),
+    index("shares_expires_at_idx").on(table.expiresAt),
   ],
 );

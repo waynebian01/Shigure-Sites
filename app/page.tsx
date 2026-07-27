@@ -367,10 +367,6 @@ export default function Home() {
             </nav>
           )}
           <button className="primary-button" type="button" onClick={() => {
-            if (!sessionStatus?.authenticated) {
-              window.location.href = "/login";
-              return;
-            }
             setNotice("");
             setIsModalOpen(true);
           }}>
@@ -561,6 +557,9 @@ export default function Home() {
               <div><span className="preview-kicker">NEW SHARE</span><h2 id="share-title">分享一个 JSON</h2></div>
               <button type="button" onClick={() => setIsModalOpen(false)} disabled={uploading} aria-label="关闭">×</button>
             </div>
+            <p className="share-retention-note">
+              未登录用户（包括未注册用户）分享的 JSON 仅保存 90 天；登录后分享会长期保存并进入个人中心。
+            </p>
             <form ref={formRef} onSubmit={handleSubmit}>
               <div className="module-metadata" data-valid={Boolean(fileMetadata?.hasClassSpecialization)}>
                 <dl><dt>作者</dt><dd>{fileMetadata?.author ?? "等待解析"}</dd></dl>
