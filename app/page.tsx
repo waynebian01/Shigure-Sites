@@ -332,10 +332,10 @@ export default function Home() {
           <span className="brand-mark" aria-hidden="true">
             <img src="/brand/arasaka-icon-64.png" width={64} height={64} alt="" />
           </span>
-          <span>Shigure</span>
+          <span>SHIGURE</span>
         </a>
         <div className="header-actions">
-          <span className="format-note"><i /> ARASAKA CORPORATION SHARING PLATFORM</span>
+          <span className="format-note"><i /> COMMUNITY MODULE ARCHIVE // 2077</span>
           <div className="theme-switcher" role="group" aria-label="外观主题">
             {themeOptions.map((option) => (
               <button
@@ -374,6 +374,40 @@ export default function Home() {
           </button>
         </div>
       </header>
+
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-copy">
+          <span className="hero-kicker">SHIGURE NETWORK // ACCESS GRANTED</span>
+          <h1 id="hero-title">你的配置<br />由你定义</h1>
+          <p>
+            上传、检索并下载社区分享的 JSON 模块。
+            <br />把每一次构筑，变成下一段传奇的起点。
+          </p>
+          <div className="hero-actions">
+            <button type="button" onClick={() => {
+              setNotice("");
+              setIsModalOpen(true);
+            }}>
+              分享 JSON <span aria-hidden="true">↗</span>
+            </button>
+            <a href="#library-title">
+              浏览分享库 <span aria-hidden="true">↓</span>
+            </a>
+          </div>
+        </div>
+        <div className="hero-visual" aria-hidden="true">
+          <span className="hero-sigil">{'{ }'}</span>
+          <span className="hero-serial">S-77</span>
+          <div className="hero-readout">
+            <small>NETWORK STATUS</small>
+            <strong>ONLINE</strong>
+          </div>
+        </div>
+        <div className="hero-ticker" aria-hidden="true">
+          <span>SHARE</span><i /> <span>BUILD</span><i /> <span>SYNC</span><i />
+          <span>COMMUNITY ARCHIVE</span><i /> <span>JSON MODULE SYSTEM</span>
+        </div>
+      </section>
 
       <section className="library" id="top" aria-labelledby="library-title">
         <nav className="project-links" aria-label="获取项目">
