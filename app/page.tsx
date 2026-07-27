@@ -375,34 +375,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <span className="hero-kicker">SHIGURE NETWORK // ACCESS GRANTED</span>
-          <h1 id="hero-title">你的配置<br />由你定义</h1>
-          <p>
-            上传、检索并下载社区分享的 JSON 模块。
-            <br />把每一次构筑，变成下一段传奇的起点。
-          </p>
-          <div className="hero-actions">
-            <button type="button" onClick={() => {
-              setNotice("");
-              setIsModalOpen(true);
-            }}>
-              分享 JSON <span aria-hidden="true">↗</span>
-            </button>
-            <a href="#library-title">
-              浏览分享库 <span aria-hidden="true">↓</span>
-            </a>
-          </div>
-        </div>
-        <div className="hero-visual" aria-hidden="true">
-          <span className="hero-sigil">{'{ }'}</span>
-          <span className="hero-serial">S-77</span>
-          <div className="hero-readout">
-            <small>NETWORK STATUS</small>
-            <strong>ONLINE</strong>
-          </div>
-        </div>
+      <section className="hero-rail" aria-label="Shigure network status">
         <div className="hero-ticker" aria-hidden="true">
           <span>SHARE</span><i /> <span>BUILD</span><i /> <span>SYNC</span><i />
           <span>COMMUNITY ARCHIVE</span><i /> <span>JSON MODULE SYSTEM</span>

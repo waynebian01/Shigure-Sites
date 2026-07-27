@@ -385,6 +385,35 @@ img { display: block; }
 
 .hero-ticker i { width: 6px; height: 6px; flex: 0 0 auto; background: var(--red); transform: rotate(45deg); }
 
+.hero-rail {
+  position: relative;
+  height: 132px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.16) 1px, transparent 1px),
+    var(--yellow);
+  background-size: 48px 48px;
+}
+
+.hero-rail::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 34px;
+  background: var(--paper);
+  clip-path: polygon(0 48%, 18% 48%, 18% 0, 36% 0, 36% 58%, 68% 58%, 68% 16%, 86% 16%, 86% 50%, 100% 50%, 100% 100%, 0 100%);
+}
+
+.hero-rail .hero-ticker {
+  top: 0;
+  bottom: auto;
+  min-height: 64px;
+}
+
 .library {
   position: relative;
   padding: 64px clamp(18px, 6vw, 92px) 110px;
