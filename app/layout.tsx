@@ -45,6 +45,13 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(origin),
     title,
     description,
+    icons: {
+      icon: [
+        { url: "/brand/arasaka-icon-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/brand/arasaka-icon-64.png", sizes: "64x64", type: "image/png" },
+      ],
+      apple: [{ url: "/brand/arasaka-icon-128.png", sizes: "128x128", type: "image/png" }],
+    },
     openGraph: { title, description, type: "website", url: origin, images: [{ url: `${origin}/og.png`, width: 1734, height: 907, alt: "Shigure JSON 小文件分享站" }] },
     twitter: { card: "summary_large_image", title, description, images: [`${origin}/og.png`] },
   };

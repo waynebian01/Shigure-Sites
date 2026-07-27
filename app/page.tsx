@@ -325,7 +325,9 @@ export default function Home() {
     <main>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Shigure 首页">
-          <span className="brand-mark" aria-hidden="true">S</span>
+          <span className="brand-mark" aria-hidden="true">
+            <img src="/brand/arasaka-icon-64.png" width={64} height={64} alt="" />
+          </span>
           <span>Shigure</span>
         </a>
         <div className="header-actions">
@@ -505,7 +507,12 @@ export default function Home() {
       </section>
 
       <footer>
-        <div><span className="brand-mark small">S</span><strong>Shigure</strong></div>
+        <div>
+          <span className="brand-mark small" aria-hidden="true">
+            <img src="/brand/arasaka-icon-32.png" width={32} height={32} alt="" />
+          </span>
+          <strong>Shigure</strong>
+        </div>
         <p>轻量 JSON 分享，让灵感持续流动。</p>
         <span>© 2026 SHIGURE</span>
       </footer>
