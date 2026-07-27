@@ -376,6 +376,18 @@ export default function Home() {
       </header>
 
       <section className="library" id="top" aria-labelledby="library-title">
+        <nav className="project-links" aria-label="获取项目">
+          <a href="https://github.com/waynebian01/Fuyutsui" target="_blank" rel="noopener noreferrer">
+            <span>01</span>
+            <strong>获取 Fuyutsui</strong>
+            <i aria-hidden="true">↗</i>
+          </a>
+          <a href="https://github.com/waynebian01/Shigure" target="_blank" rel="noopener noreferrer">
+            <span>02</span>
+            <strong>获取 Shigure</strong>
+            <i aria-hidden="true">↗</i>
+          </a>
+        </nav>
         <div className="section-heading">
           <div>
             <span className="section-index">01</span>
