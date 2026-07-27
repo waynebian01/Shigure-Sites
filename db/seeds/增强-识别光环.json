@@ -1,0 +1,32 @@
+{
+  "Id": "新模块1-20260619225753423",
+  "Name": "增强-识别光环",
+  "Author": "Wayne",
+  "Version": "1.2.0.0",
+  "Enabled": true,
+  "Match": {
+    "ClassId": 7,
+    "SpecId": 2
+  },
+  "Units": [],
+  "Counts": [],
+  "ValueAdjustments": [],
+  "Rules": [
+    {
+      "Enabled": false,
+      "Condition": "",
+      "Unit": 0,
+      "Spell": "一键法术",
+      "Hotkey": "",
+      "Step": ""
+    },
+    {
+      "Enabled": true,
+      "Condition": "ra.层数.漩涡武器 >= 10",
+      "Unit": 0,
+      "Spell": "闪电箭",
+      "Hotkey": "",
+      "Step": ""
+    }
+  ]
+}

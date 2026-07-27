@@ -6,6 +6,34 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const themeScript = `
+(() => {
+  const root = document.documentElement;
+  const valid = new Set(["system", "light", "dark"]);
+  let preference = "system";
+
+  try {
+    const stored = localStorage.getItem("shigure-theme");
+    if (stored && valid.has(stored)) preference = stored;
+  } catch {}
+
+  let resolved = preference;
+  if (preference === "system") {
+    try {
+      resolved = typeof window.matchMedia === "function"
+        ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+        : "dark";
+    } catch {
+      resolved = "dark";
+    }
+  }
+
+  root.dataset.themePreference = preference;
+  root.dataset.theme = resolved;
+  root.style.colorScheme = resolved;
+})();
+`;
+
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
@@ -24,7 +52,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
     </html>
   );

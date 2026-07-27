@@ -1,10 +1,10 @@
-export const MODULE_HEADER_KEYS = ["Id", "Name", "Author", "Version", "Enabled"] as const;
+export const MODULE_HEADER_KEYS = ["Id", "Name", "Enabled"] as const;
 
 export type ModuleHeader = {
   Id: unknown;
   Name: unknown;
-  Author: unknown;
-  Version: unknown;
+  Author?: unknown;
+  Version?: unknown;
   Enabled: unknown;
 };
 

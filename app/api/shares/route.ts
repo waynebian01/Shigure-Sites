@@ -1,5 +1,6 @@
 import { listShares, storageBindings } from "../../../lib/shares";
 import { validateModuleJson } from "../../../lib/module-json";
+import { getModuleMetadata } from "../../../lib/module-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -23,18 +24,12 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     const fields = {
-      author: String(form.get("author") ?? "").trim(),
-      version: String(form.get("version") ?? "").trim(),
-      profession: String(form.get("profession") ?? "").trim(),
-      specialization: String(form.get("specialization") ?? "").trim(),
       description: String(form.get("description") ?? "").trim(),
     };
 
     if (!(file instanceof File)) return Response.json({ error: "请选择一个 JSON 文件" }, { status: 400 });
-    if (!Object.values(fields).every(Boolean)) return Response.json({ error: "请完整填写作者、版本、职业、专精与描述" }, { status: 400 });
-    if (fields.author.length > 40 || fields.version.length > 20 || fields.profession.length > 40 || fields.specialization.length > 40 || fields.description.length > 240) {
-      return Response.json({ error: "部分文字内容过长，请精简后重试" }, { status: 400 });
-    }
+    if (!fields.description) return Response.json({ error: "请填写文件描述" }, { status: 400 });
+    if (fields.description.length > 240) return Response.json({ error: "描述内容过长，请精简后重试" }, { status: 400 });
     if (!file.name.toLowerCase().endsWith(".json")) return Response.json({ error: "仅支持 .json 文件" }, { status: 415 });
     if (file.size > 200 * 1024) return Response.json({ error: "文件大小不能超过 200 KB" }, { status: 413 });
     if (file.size === 0) return Response.json({ error: "不能分享空文件" }, { status: 400 });
@@ -42,6 +37,10 @@ export async function POST(request: Request) {
     const text = await file.text();
     const validation = validateModuleJson(text);
     if (!validation.ok) return Response.json({ error: validation.error }, { status: 400 });
+    const metadata = getModuleMetadata(validation.content);
+    if (!metadata.hasClassSpecialization) {
+      return Response.json({ error: "JSON 缺少有效的职业或专精信息，无法上传" }, { status: 400 });
+    }
 
     const { DB, FILES } = storageBindings();
     const id = crypto.randomUUID();
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
     await DB.prepare(`INSERT INTO shares
       (id, filename, author, version, profession, specialization, description, size, r2_key, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, safeFilename, fields.author, fields.version, fields.profession, fields.specialization, fields.description, new TextEncoder().encode(text).byteLength, r2Key, Date.now())
+      .bind(id, safeFilename, metadata.author, metadata.version, metadata.profession, metadata.specialization, fields.description, new TextEncoder().encode(text).byteLength, r2Key, Date.now())
       .run();
     return Response.json({ id }, { status: 201 });
   } catch (error) {

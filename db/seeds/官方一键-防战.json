@@ -1,0 +1,78 @@
+{
+  "Id": "新模块1-20260622220136931",
+  "Name": "官方一键-防战",
+  "Author": "",
+  "Version": "1.2.2.4",
+  "Enabled": true,
+  "Match": {
+    "ClassId": 1,
+    "SpecId": 3
+  },
+  "Units": [],
+  "Counts": [],
+  "ValueAdjustments": [],
+  "Rules": [
+    {
+      "Enabled": true,
+      "Condition": "战斗时间 == 0 || 目标类型 == 0 || 目标类型 >= 10",
+      "Spell": "暂停",
+      "Hotkey": "",
+      "Step": ""
+    },
+    {
+      "Enabled": true,
+      "Condition": "spells.拳击 == 0 && 战斗时间 > 0",
+      "Unit": 0,
+      "Spell": "拳击",
+      "Hotkey": "",
+      "Step": "",
+      "SubConditions": [
+        "目标施法 > 0 && 目标施法 <= 40 && 目标施法可打断 == true",
+        "目标引导 > 0 && 目标引导可打断 == true"
+      ]
+    },
+    {
+      "Enabled": true,
+      "Condition": "spells.拳击 == 0 && 战斗时间 > 0",
+      "Unit": 0,
+      "Spell": "拳击(焦点)",
+      "Hotkey": "",
+      "Step": "",
+      "SubConditions": [
+        "焦点施法 > 0 && 目标施法 <= 40 && 焦点施法可打断 == true",
+        "焦点引导 > 0 && 焦点引导可打断 == true"
+      ]
+    },
+    {
+      "Enabled": true,
+      "Condition": "auras.盾牌格挡 == 0 && spells.盾牌格挡 == 0 && 怒气值 >= 30",
+      "Unit": 0,
+      "Spell": "盾牌格挡",
+      "Hotkey": "",
+      "Step": ""
+    },
+    {
+      "Enabled": true,
+      "Condition": "怒气值 >= 60",
+      "Unit": 0,
+      "Spell": "无视苦痛",
+      "Hotkey": "",
+      "Step": ""
+    },
+    {
+      "Enabled": true,
+      "Condition": "",
+      "Spell": "插入法术",
+      "Hotkey": "",
+      "Step": ""
+    },
+    {
+      "Enabled": true,
+      "Condition": "",
+      "Unit": 0,
+      "Spell": "一键法术",
+      "Hotkey": "",
+      "Step": ""
+    }
+  ]
+}

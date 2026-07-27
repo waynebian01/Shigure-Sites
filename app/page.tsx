@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ModuleHeader, validateModuleJson } from "../lib/module-json";
+import { getModuleMetadata, ModuleMetadata } from "../lib/module-metadata";
+import { wowClasses, wowClassSpecializations } from "../lib/wow-taxonomy";
 
 type Share = {
   id: string;
@@ -15,7 +17,53 @@ type Share = {
   createdAt: string;
 };
 
-const professions = ["战士", "圣骑士", "猎人", "潜行者", "牧师", "死亡骑士", "萨满祭司", "法师", "术士", "武僧", "德鲁伊", "恶魔猎手", "唤魔师"];
+type AdminStatus = {
+  authenticated: boolean;
+  isAdmin: boolean;
+};
+
+type ThemePreference = "system" | "light" | "dark";
+
+const themeOptions: Array<{ value: ThemePreference; label: string; symbol: string }> = [
+  { value: "system", label: "系统", symbol: "◐" },
+  { value: "light", label: "亮色", symbol: "☼" },
+  { value: "dark", label: "暗色", symbol: "☾" },
+];
+
+function resolveTheme(preference: ThemePreference): Exclude<ThemePreference, "system"> {
+  if (preference !== "system") return preference;
+  try {
+    return typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: light)").matches
+      ? "light"
+      : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function applyTheme(preference: ThemePreference) {
+  const resolved = resolveTheme(preference);
+  document.documentElement.dataset.themePreference = preference;
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.style.colorScheme = resolved;
+}
+
+const wowClassIcons: Record<string, string> = {
+  "战士": "/class-icons/warrior.jpg",
+  "圣骑士": "/class-icons/paladin.jpg",
+  "猎人": "/class-icons/hunter.jpg",
+  "潜行者": "/class-icons/rogue.jpg",
+  "牧师": "/class-icons/priest.jpg",
+  "死亡骑士": "/class-icons/deathknight.jpg",
+  "萨满祭司": "/class-icons/shaman.jpg",
+  "法师": "/class-icons/mage.jpg",
+  "术士": "/class-icons/warlock.jpg",
+  "武僧": "/class-icons/monk.jpg",
+  "德鲁伊": "/class-icons/druid.jpg",
+  "恶魔猎手": "/class-icons/demonhunter.jpg",
+  "唤魔师": "/class-icons/evoker.jpg",
+};
 
 function formatSize(bytes: number) {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
@@ -30,39 +78,52 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function getRecommendedTalent(content: unknown) {
+  if (!content || typeof content !== "object") return null;
+  const value = (content as Record<string, unknown>).RecommendedTalent;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 export default function Home() {
   const [shares, setShares] = useState<Share[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [jsonText, setJsonText] = useState("");
-  const [category, setCategory] = useState("全部");
+  const [recommendedTalent, setRecommendedTalent] = useState<string | null>(null);
+  const [talentCopied, setTalentCopied] = useState(false);
+  const [professionFilter, setProfessionFilter] = useState("全部");
+  const [specializationFilter, setSpecializationFilter] = useState("全部专精");
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isJsonLoading, setIsJsonLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [adminStatus, setAdminStatus] = useState<AdminStatus | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Share | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [notice, setNotice] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileHeader, setFileHeader] = useState<ModuleHeader | null>(null);
+  const [fileMetadata, setFileMetadata] = useState<ModuleMetadata | null>(null);
+  const [themePreference, setThemePreference] = useState<ThemePreference>("system");
   const formRef = useRef<HTMLFormElement>(null);
 
-  const categories = useMemo(
-    () => ["全部", ...Array.from(new Set(shares.map((item) => item.profession)))],
-    [shares],
-  );
-
+  const filterSpecializations = professionFilter === "全部"
+    ? []
+    : wowClassSpecializations[professionFilter as keyof typeof wowClassSpecializations] ?? [];
   const visibleShares = useMemo(() => {
     const keyword = query.trim().toLowerCase();
     return shares.filter((item) => {
-      const categoryMatches = category === "全部" || item.profession === category;
+      const professionMatches = professionFilter === "全部" || item.profession === professionFilter;
+      const specializationMatches = specializationFilter === "全部专精" || item.specialization === specializationFilter;
       const searchMatches =
         !keyword ||
         [item.filename, item.author, item.profession, item.specialization, item.description]
           .join(" ")
           .toLowerCase()
           .includes(keyword);
-      return categoryMatches && searchMatches;
+      return professionMatches && specializationMatches && searchMatches;
     });
-  }, [category, query, shares]);
+  }, [professionFilter, query, shares, specializationFilter]);
 
   const selected = shares.find((item) => item.id === selectedId) ?? null;
 
@@ -71,7 +132,12 @@ export default function Home() {
     if (!response.ok) throw new Error("无法读取分享内容");
     const payload = (await response.json()) as { shares: Share[] };
     setShares(payload.shares);
-    setSelectedId((current) => preferredId ?? current ?? payload.shares[0]?.id ?? null);
+    setSelectedId((current) => {
+      const candidate = preferredId ?? current;
+      return payload.shares.some((share) => share.id === candidate)
+        ? candidate
+        : payload.shares[0]?.id ?? null;
+    });
   }
 
   useEffect(() => {
@@ -81,20 +147,56 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("无法读取管理员状态");
+        setAdminStatus((await response.json()) as AdminStatus);
+      })
+      .catch(() => setAdminStatus({ authenticated: false, isAdmin: false }));
+  }, []);
+
+  useEffect(() => {
+    const initialPreference = document.documentElement.dataset.themePreference;
+    const preference: ThemePreference =
+      initialPreference === "light" || initialPreference === "dark" || initialPreference === "system"
+        ? initialPreference
+        : "system";
+    setThemePreference(preference);
+    applyTheme(preference);
+
+    if (typeof window.matchMedia !== "function") return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    const handleSystemThemeChange = () => {
+      if (document.documentElement.dataset.themePreference === "system") {
+        applyTheme("system");
+      }
+    };
+    mediaQuery.addEventListener?.("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener?.("change", handleSystemThemeChange);
+  }, []);
+
+  useEffect(() => {
     if (!selectedId) {
       setJsonText("");
+      setRecommendedTalent(null);
       return;
     }
     const controller = new AbortController();
     setIsJsonLoading(true);
+    setRecommendedTalent(null);
+    setTalentCopied(false);
     fetch(`/api/shares/${selectedId}`, { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) throw new Error("读取失败");
         const payload = (await response.json()) as { content: unknown };
         setJsonText(JSON.stringify(payload.content, null, 2));
+        setRecommendedTalent(getRecommendedTalent(payload.content));
       })
       .catch((error: Error) => {
-        if (error.name !== "AbortError") setJsonText("无法读取这个 JSON 文件。\n请稍后再试。");
+        if (error.name !== "AbortError") {
+          setJsonText("无法读取这个 JSON 文件。\n请稍后再试。");
+          setRecommendedTalent(null);
+        }
       })
       .finally(() => setIsJsonLoading(false));
     return () => controller.abort();
@@ -102,6 +204,7 @@ export default function Home() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setNotice("");
     if (!file) {
       setNotice("请选择一个 JSON 文件。");
@@ -120,20 +223,27 @@ export default function Home() {
       setNotice(validation.error);
       return;
     }
+    const metadata = getModuleMetadata(validation.content);
+    if (!metadata.hasClassSpecialization) {
+      setNotice("JSON 缺少有效的职业或专精信息，无法上传。" );
+      return;
+    }
 
     setUploading(true);
-    const data = new FormData(event.currentTarget);
-    data.set("file", file);
     try {
+      const data = new FormData(form);
+      data.set("file", file);
       const response = await fetch("/api/shares", { method: "POST", body: data });
       const payload = (await response.json()) as { id?: string; error?: string };
       if (!response.ok || !payload.id) throw new Error(payload.error || "分享失败");
       await loadShares(payload.id);
-      setCategory("全部");
+      setProfessionFilter("全部");
+      setSpecializationFilter("全部专精");
       setQuery("");
       setIsModalOpen(false);
       setFile(null);
       setFileHeader(null);
+      setFileMetadata(null);
       formRef.current?.reset();
       setNotice("分享成功，已出现在列表顶部。" );
     } catch (error) {
@@ -147,6 +257,7 @@ export default function Home() {
     setNotice("");
     setFile(candidate);
     setFileHeader(null);
+    setFileMetadata(null);
     if (!candidate) return;
     if (!candidate.name.toLowerCase().endsWith(".json")) {
       setNotice("仅支持 .json 文件。");
@@ -162,10 +273,52 @@ export default function Home() {
       return;
     }
     setFileHeader(validation.header);
-    const authorInput = formRef.current?.elements.namedItem("author") as HTMLInputElement | null;
-    const versionInput = formRef.current?.elements.namedItem("version") as HTMLInputElement | null;
-    if (authorInput && typeof validation.header.Author === "string") authorInput.value = validation.header.Author;
-    if (versionInput && typeof validation.header.Version === "string") versionInput.value = validation.header.Version;
+    const metadata = getModuleMetadata(validation.content);
+    setFileMetadata(metadata);
+    if (!metadata.hasClassSpecialization) {
+      setNotice("JSON 缺少有效的职业或专精信息，无法上传。" );
+    }
+  }
+
+  async function handleDelete() {
+    if (!pendingDelete || !adminStatus?.isAdmin) return;
+    setIsDeleting(true);
+    setNotice("");
+    try {
+      const response = await fetch(`/api/shares/${pendingDelete.id}`, { method: "DELETE" });
+      const payload = (await response.json()) as { deleted?: boolean; error?: string };
+      if (!response.ok || !payload.deleted) throw new Error(payload.error || "删除失败");
+      setPendingDelete(null);
+      await loadShares();
+      setNotice(`已删除 ${pendingDelete.filename}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "删除失败，请稍后重试。");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  async function handleCopyTalent() {
+    if (!recommendedTalent) return;
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(recommendedTalent);
+      setTalentCopied(true);
+      setNotice("推荐天赋已复制。");
+    } catch {
+      setTalentCopied(false);
+      setNotice("无法自动复制，请手动选择天赋字符串。");
+    }
+  }
+
+  function handleThemeChange(preference: ThemePreference) {
+    setThemePreference(preference);
+    applyTheme(preference);
+    try {
+      localStorage.setItem("shigure-theme", preference);
+    } catch {
+      // The choice still applies for this page when storage is unavailable.
+    }
   }
 
   return (
@@ -177,27 +330,40 @@ export default function Home() {
         </a>
         <div className="header-actions">
           <span className="format-note"><i /> JSON ONLY · MAX 200 KB</span>
+          <div className="theme-switcher" role="group" aria-label="外观主题">
+            {themeOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={themePreference === option.value}
+                title={`${option.label}主题`}
+                onClick={() => handleThemeChange(option.value)}
+              >
+                <span aria-hidden="true">{option.symbol}</span>
+                <small>{option.label}</small>
+              </button>
+            ))}
+          </div>
+          {adminStatus?.isAdmin ? (
+            <div className="admin-session">
+              <span>管理员</span>
+              <a href="/signout-with-chatgpt?return_to=%2F">退出</a>
+            </div>
+          ) : (
+            <a className="admin-login" href="/signin-with-chatgpt?return_to=%2F">
+              管理员登录
+            </a>
+          )}
           <button className="primary-button" type="button" onClick={() => { setNotice(""); setIsModalOpen(true); }}>
             <span aria-hidden="true">＋</span> 分享 JSON
           </button>
         </div>
       </header>
 
-      <section className="hero" id="top">
-        <div className="eyebrow"><span>01</span> 小文件分享站</div>
-        <h1>让好用的配置，<br /><em>被更多人发现。</em></h1>
-        <p>上传、浏览、查看与下载社区分享的 JSON 文件。轻量、清晰，不让有价值的配置藏在聊天记录里。</p>
-        <div className="hero-meta">
-          <span>{shares.length.toString().padStart(2, "0")} 份公开分享</span>
-          <span>即时查看</span>
-          <span>无需解压</span>
-        </div>
-      </section>
-
-      <section className="library" aria-labelledby="library-title">
+      <section className="library" id="top" aria-labelledby="library-title">
         <div className="section-heading">
           <div>
-            <span className="section-index">02</span>
+            <span className="section-index">01</span>
             <h2 id="library-title">分享库</h2>
           </div>
           <label className="search-box">
@@ -207,12 +373,56 @@ export default function Home() {
           </label>
         </div>
 
-        <div className="category-tabs" role="tablist" aria-label="按职业筛选">
-          {categories.map((item) => (
-            <button key={item} type="button" role="tab" aria-selected={category === item} onClick={() => setCategory(item)}>
-              {item}<sup>{item === "全部" ? shares.length : shares.filter((share) => share.profession === item).length}</sup>
-            </button>
-          ))}
+        <div className="taxonomy-filters">
+          <div className="filter-row profession-row">
+            <div className="category-tabs" role="tablist" aria-label="按职业筛选">
+              {["全部", ...wowClasses].map((item) => {
+                const icon = wowClassIcons[item];
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={professionFilter === item}
+                    onClick={() => {
+                      setProfessionFilter(item);
+                      setSpecializationFilter("全部专精");
+                    }}
+                  >
+                    <span className="class-tab-icon" aria-hidden="true">
+                      {icon ? <img src={icon} alt="" /> : <span>{item === "全部" ? "✦" : "?"}</span>}
+                    </span>
+                    <span className="class-tab-label">{item}</span>
+                    <sup>{item === "全部" ? shares.length : shares.filter((share) => share.profession === item).length}</sup>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {professionFilter !== "全部" && (
+            <div className="filter-row specialization-row">
+              <span className="filter-label">专精</span>
+              <div className="specialization-tabs" role="tablist" aria-label={`按${professionFilter}专精筛选`}>
+                {["全部专精", ...filterSpecializations].map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={specializationFilter === item}
+                    onClick={() => setSpecializationFilter(item)}
+                  >
+                    {item}
+                    <sup>
+                      {item === "全部专精"
+                        ? shares.filter((share) => share.profession === professionFilter).length
+                        : shares.filter((share) => share.profession === professionFilter && share.specialization === item).length}
+                    </sup>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="explorer-shell">
@@ -250,9 +460,16 @@ export default function Home() {
                     <span className="preview-kicker">JSON 预览</span>
                     <h3>{selected.filename}</h3>
                   </div>
-                  <a className="download-button" href={`/api/shares/${selected.id}/download`} download>
-                    下载 <span aria-hidden="true">↓</span>
-                  </a>
+                  <div className="preview-actions">
+                    <a className="download-button" href={`/api/shares/${selected.id}/download`} download>
+                      下载 <span aria-hidden="true">↓</span>
+                    </a>
+                    {adminStatus?.isAdmin && (
+                      <button className="delete-button" type="button" onClick={() => setPendingDelete(selected)}>
+                        删除
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="file-details">
                   <dl><dt>作者</dt><dd>{selected.author}</dd></dl>
@@ -261,6 +478,20 @@ export default function Home() {
                   <dl><dt>专精</dt><dd>{selected.specialization}</dd></dl>
                 </div>
                 <p className="description">{selected.description}</p>
+                {recommendedTalent && (
+                  <section className="talent-card" aria-labelledby="talent-title">
+                    <div className="talent-heading">
+                      <div>
+                        <span id="talent-title">推荐天赋</span>
+                        <small>复制后可在游戏天赋界面导入</small>
+                      </div>
+                      <button type="button" onClick={() => void handleCopyTalent()}>
+                        {talentCopied ? "✓ 已复制" : "复制天赋"}
+                      </button>
+                    </div>
+                    <code>{recommendedTalent}</code>
+                  </section>
+                )}
                 <div className="code-window">
                   <div className="code-toolbar"><span>RAW · JSON</span><span>{formatDate(selected.createdAt)}</span></div>
                   <pre>{isJsonLoading ? "正在读取…" : jsonText}</pre>
@@ -281,6 +512,23 @@ export default function Home() {
 
       {notice && !isModalOpen && <div className="toast" role="status">{notice}<button onClick={() => setNotice("")} aria-label="关闭提示">×</button></div>}
 
+      {pendingDelete && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !isDeleting) setPendingDelete(null); }}>
+          <section className="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+            <span className="preview-kicker">ADMIN ACTION</span>
+            <h2 id="delete-title">删除这个模块？</h2>
+            <p><strong>{pendingDelete.filename}</strong></p>
+            <p>模块记录和对应的 JSON 文件都会被删除，此操作无法撤销。</p>
+            <div className="delete-actions">
+              <button type="button" onClick={() => setPendingDelete(null)} disabled={isDeleting}>取消</button>
+              <button className="confirm-delete" type="button" onClick={() => void handleDelete()} disabled={isDeleting}>
+                {isDeleting ? "正在删除…" : "确认删除"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {isModalOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !uploading) setIsModalOpen(false); }}>
           <section className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
@@ -289,11 +537,13 @@ export default function Home() {
               <button type="button" onClick={() => setIsModalOpen(false)} disabled={uploading} aria-label="关闭">×</button>
             </div>
             <form ref={formRef} onSubmit={handleSubmit}>
+              <div className="module-metadata" data-valid={Boolean(fileMetadata?.hasClassSpecialization)}>
+                <dl><dt>作者</dt><dd>{fileMetadata?.author ?? "等待解析"}</dd></dl>
+                <dl><dt>版本</dt><dd>{fileMetadata?.version ?? "等待解析"}</dd></dl>
+                <dl><dt>职业</dt><dd>{fileMetadata?.profession ?? "等待解析"}</dd></dl>
+                <dl><dt>专精</dt><dd>{fileMetadata?.specialization ?? "等待解析"}</dd></dl>
+              </div>
               <div className="form-grid">
-                <label>作者<input name="author" required maxLength={40} placeholder="填写分享作者" /></label>
-                <label>版本<input name="version" required maxLength={20} placeholder="例如 1.2.0" /></label>
-                <label>职业<select name="profession" required defaultValue=""><option value="" disabled>选择职业</option>{professions.map((item) => <option key={item}>{item}</option>)}</select></label>
-                <label>专精<input name="specialization" required maxLength={40} placeholder="例如 戒律" /></label>
                 <label className="full-width">描述<textarea name="description" required maxLength={240} rows={3} placeholder="简单说说这个文件能做什么" /></label>
               </div>
               <label className="file-drop" data-has-file={Boolean(file)}>
@@ -304,10 +554,10 @@ export default function Home() {
               </label>
               <div className="standard-card" data-valid={Boolean(fileHeader)}>
                 <div>
-                  <span>{fileHeader ? "✓ 格式符合标准" : "文件开头标准"}</span>
-                  {fileHeader && <strong>已识别全部 5 个必需字段</strong>}
+                  <span>{fileHeader ? "✓ 已读取 JSON 文件" : "JSON 文件要求"}</span>
+                  {fileHeader && <strong>{fileMetadata?.hasClassSpecialization ? "职业与专精识别完成" : "需要有效的职业与专精"}</strong>}
                 </div>
-                <code>Id · Name · Author · Version · Enabled<br />顺序与值不限</code>
+                <code>Id · Name · Enabled<br />职业与专精从 Match 读取</code>
               </div>
               {notice && <p className="form-notice" role="alert">{notice}</p>}
               <button className="submit-button" type="submit" disabled={uploading}>{uploading ? "正在分享…" : "确认分享"}<span>→</span></button>
