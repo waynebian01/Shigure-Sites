@@ -108,6 +108,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [fileHeader, setFileHeader] = useState<ModuleHeader | null>(null);
   const [fileMetadata, setFileMetadata] = useState<ModuleMetadata | null>(null);
+  const [selectedMetadata, setSelectedMetadata] = useState<ModuleMetadata | null>(null);
   const [themePreference, setThemePreference] = useState<ThemePreference>("system");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -183,11 +184,13 @@ export default function Home() {
     if (!selectedId) {
       setJsonText("");
       setRecommendedTalent(null);
+      setSelectedMetadata(null);
       return;
     }
     const controller = new AbortController();
     setIsJsonLoading(true);
     setRecommendedTalent(null);
+    setSelectedMetadata(null);
     setTalentCopied(false);
     fetch(`/api/shares/${selectedId}`, { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
@@ -195,11 +198,17 @@ export default function Home() {
         const payload = (await response.json()) as { content: unknown };
         setJsonText(JSON.stringify(payload.content, null, 2));
         setRecommendedTalent(getRecommendedTalent(payload.content));
+        setSelectedMetadata(
+          payload.content && typeof payload.content === "object" && !Array.isArray(payload.content)
+            ? getModuleMetadata(payload.content as Record<string, unknown>)
+            : null,
+        );
       })
       .catch((error: Error) => {
         if (error.name !== "AbortError") {
           setJsonText("无法读取这个 JSON 文件。\n请稍后再试。");
           setRecommendedTalent(null);
+          setSelectedMetadata(null);
         }
       })
       .finally(() => setIsJsonLoading(false));
@@ -228,8 +237,8 @@ export default function Home() {
       return;
     }
     const metadata = getModuleMetadata(validation.content);
-    if (!metadata.hasClassSpecialization) {
-      setNotice("JSON 缺少有效的职业或专精信息，无法上传。" );
+    if (metadata.classSpecializationError) {
+      setNotice(`${metadata.classSpecializationError}。`);
       return;
     }
 
@@ -279,8 +288,8 @@ export default function Home() {
     setFileHeader(validation.header);
     const metadata = getModuleMetadata(validation.content);
     setFileMetadata(metadata);
-    if (!metadata.hasClassSpecialization) {
-      setNotice("JSON 缺少有效的职业或专精信息，无法上传。" );
+    if (metadata.classSpecializationError) {
+      setNotice(`${metadata.classSpecializationError}。`);
     }
   }
 
@@ -332,10 +341,10 @@ export default function Home() {
           <span className="brand-mark" aria-hidden="true">
             <img src="/brand/arasaka-icon-64.png" width={64} height={64} alt="" />
           </span>
-          <span>Shigure</span>
+          <span>SHIGURE</span>
         </a>
         <div className="header-actions">
-          <span className="format-note"><i /> ARASAKA CORPORATION SHARING PLATFORM</span>
+          <span className="format-note"><i /> Arasaka Corporation Sharing platform</span>
           <div className="theme-switcher" role="group" aria-label="外观主题">
             {themeOptions.map((option) => (
               <button
@@ -375,8 +384,8 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="library" id="top" aria-labelledby="library-title">
-        <nav className="project-links" aria-label="获取项目">
+      <section className="hero-rail" aria-label="Shigure network status">
+        <nav className="project-links hero-project-links" aria-label="获取项目">
           <a href="https://github.com/waynebian01/Fuyutsui" target="_blank" rel="noopener noreferrer">
             <span>01</span>
             <strong>获取 Fuyutsui</strong>
@@ -388,10 +397,12 @@ export default function Home() {
             <i aria-hidden="true">↗</i>
           </a>
         </nav>
+      </section>
+
+      <section className="library" id="top" aria-labelledby="library-title">
         <div className="section-heading">
           <div>
-            <span className="section-index">01</span>
-            <h2 id="library-title">分享库</h2>
+            <h2 id="library-title">模型库</h2>
           </div>
           <label className="search-box">
             <span aria-hidden="true">⌕</span>
@@ -504,6 +515,8 @@ export default function Home() {
                   <dl><dt>版本</dt><dd>{selected.version}</dd></dl>
                   <dl><dt>职业</dt><dd>{selected.profession}</dd></dl>
                   <dl><dt>专精</dt><dd>{selected.specialization}</dd></dl>
+                  <dl><dt>队伍类型</dt><dd>{selectedMetadata?.partyType ?? "读取中…"}</dd></dl>
+                  <dl><dt>英雄天赋</dt><dd>{selectedMetadata?.heroTalent ?? "读取中…"}</dd></dl>
                 </div>
                 <p className="description">{selected.description}</p>
                 {recommendedTalent && (
@@ -578,6 +591,8 @@ export default function Home() {
                 <dl><dt>版本</dt><dd>{fileMetadata?.version ?? "等待解析"}</dd></dl>
                 <dl><dt>职业</dt><dd>{fileMetadata?.profession ?? "等待解析"}</dd></dl>
                 <dl><dt>专精</dt><dd>{fileMetadata?.specialization ?? "等待解析"}</dd></dl>
+                <dl><dt>队伍类型</dt><dd>{fileMetadata?.partyType ?? "等待解析"}</dd></dl>
+                <dl><dt>英雄天赋</dt><dd>{fileMetadata?.heroTalent ?? "等待解析"}</dd></dl>
               </div>
               <div className="form-grid">
                 <label className="full-width">描述<textarea name="description" required maxLength={240} rows={3} placeholder="简单说说这个文件能做什么" /></label>
@@ -588,15 +603,15 @@ export default function Home() {
                 <strong>{file ? file.name : "选择 JSON 文件"}</strong>
                 <small>{file ? `${formatSize(file.size)} / 200 KB` : "仅支持 .json · 最大 200 KB"}</small>
               </label>
-              <div className="standard-card" data-valid={Boolean(fileHeader)}>
+              <div className="standard-card" data-valid={Boolean(fileMetadata?.hasClassSpecialization)}>
                 <div>
                   <span>{fileHeader ? "✓ 已读取 JSON 文件" : "JSON 文件要求"}</span>
                   {fileHeader && <strong>{fileMetadata?.hasClassSpecialization ? "职业与专精识别完成" : "需要有效的职业与专精"}</strong>}
                 </div>
-                <code>Id · Name · Enabled<br />职业与专精从 Match 读取</code>
+                <code>Id · Name · Enabled<br />PartyType · HeroTalent 仅识别</code>
               </div>
               {notice && <p className="form-notice" role="alert">{notice}</p>}
-              <button className="submit-button" type="submit" disabled={uploading}>{uploading ? "正在分享…" : "确认分享"}<span>→</span></button>
+              <button className="submit-button" type="submit" disabled={uploading || !fileMetadata?.hasClassSpecialization}>{uploading ? "正在分享…" : "确认分享"}<span>→</span></button>
             </form>
           </section>
         </div>

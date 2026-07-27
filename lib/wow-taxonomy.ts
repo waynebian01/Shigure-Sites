@@ -12,7 +12,6 @@ export const wowClassSpecializations = {
   "德鲁伊": ["平衡", "野性", "守护", "恢复"],
   "恶魔猎手": ["噬灭", "浩劫", "复仇"],
   "唤魔师": ["湮灭", "恩护", "增辉"],
-  "未知": ["未知"],
 } as const;
 
 export const wowClasses = Object.keys(wowClassSpecializations) as Array<keyof typeof wowClassSpecializations>;
