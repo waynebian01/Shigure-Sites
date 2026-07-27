@@ -1,6 +1,4 @@
 import { env } from "cloudflare:workers";
-import { getModuleMetadata } from "./module-metadata";
-import { seedModules } from "./seed-modules";
 
 export type ShareRecord = {
   id: string;
@@ -20,7 +18,7 @@ export type ShareRecord = {
 
 type RuntimeEnv = { DB: D1Database; FILES: R2Bucket };
 
-const SEED_VERSION = "2026-07-27-official-one-button-only-v3";
+const SEED_VERSION = "2026-07-27-remove-official-modules-v5";
 
 function bindings() {
   const runtime = env as unknown as Partial<RuntimeEnv>;
@@ -36,42 +34,16 @@ async function replaceBuiltInSamples() {
   if (currentSeed?.value === SEED_VERSION) return;
 
   const previousSamples = await DB.prepare(
-    "SELECT r2_key FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%'",
-  ).all<{ r2_key: string }>();
+    "SELECT r2_key FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%' OR filename LIKE ?",
+  ).bind("%官方一键%").all<{ r2_key: string }>();
   await Promise.all(
     previousSamples.results.map((sample: { r2_key: string }) =>
       FILES.delete(String(sample.r2_key)).catch(() => undefined),
     ),
   );
-  await DB.prepare("DELETE FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%'").run();
-
-  const encoder = new TextEncoder();
-  const rows = [];
-  for (const seed of seedModules) {
-    const metadata = getModuleMetadata(seed.content);
-    const text = JSON.stringify(seed.content, null, 2);
-    const bytes = encoder.encode(text);
-    const r2Key = `shares/${seed.id}/${seed.filename}`;
-    await FILES.put(r2Key, bytes, { httpMetadata: { contentType: "application/json; charset=utf-8" } });
-    rows.push(
-      DB.prepare(`INSERT OR REPLACE INTO shares
-        (id, filename, author, version, profession, specialization, description, size, r2_key, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(
-          seed.id,
-          seed.filename,
-          metadata.author,
-          metadata.version,
-          metadata.profession,
-          metadata.specialization,
-          seed.description,
-          bytes.byteLength,
-          r2Key,
-          seed.createdAt,
-        ),
-    );
-  }
-  if (rows.length > 0) await DB.batch(rows);
+  await DB.prepare(
+    "DELETE FROM shares WHERE id LIKE 'starter-%' OR id LIKE 'sample-%' OR filename LIKE ?",
+  ).bind("%官方一键%").run();
   await DB.prepare(`INSERT INTO app_metadata (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value`)
     .bind("seed_version", SEED_VERSION)

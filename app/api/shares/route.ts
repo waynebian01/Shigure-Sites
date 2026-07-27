@@ -46,8 +46,8 @@ export async function POST(request: Request) {
     const validation = validateModuleJson(text);
     if (!validation.ok) return Response.json({ error: validation.error }, { status: 400 });
     const metadata = getModuleMetadata(validation.content);
-    if (!metadata.hasClassSpecialization) {
-      return Response.json({ error: "JSON 缺少有效的职业或专精信息，无法上传" }, { status: 400 });
+    if (metadata.classSpecializationError) {
+      return Response.json({ error: metadata.classSpecializationError }, { status: 400 });
     }
 
     const { DB, FILES } = storageBindings();
