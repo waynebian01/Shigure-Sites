@@ -1,8 +1,7 @@
 import { listShares, storageBindings } from "../../../lib/shares";
 import { validateModuleJson } from "../../../lib/module-json";
 import { getModuleMetadata } from "../../../lib/module-metadata";
-import { getChatGPTUser } from "../../chatgpt-auth";
-import { ensureUser } from "../../../lib/users";
+import { getCurrentUser } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +27,10 @@ export async function GET() {
 export async function POST(request: Request) {
   let r2Key = "";
   try {
-    const authenticatedUser = await getChatGPTUser();
-    if (!authenticatedUser) {
+    const owner = await getCurrentUser();
+    if (!owner) {
       return Response.json({ error: "请先登录，再分享 JSON" }, { status: 401 });
     }
-    const owner = await ensureUser(authenticatedUser);
     const form = await request.formData();
     const file = form.get("file");
     const fields = {

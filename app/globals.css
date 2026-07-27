@@ -105,10 +105,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .admin-session span { padding: 6px 8px; border: 1px solid var(--accent-border); background: var(--mist); color: var(--teal-dark); font-weight: 800; }
 .admin-session a { color: var(--muted); }
 .auth-links { display: flex; align-items: center; gap: 14px; }
-.auth-links a, .account-session a { color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
-.auth-links a:hover, .account-session a:hover { color: var(--teal-dark); }
+.auth-links a, .account-session a, .account-session button { color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
+.auth-links a:hover, .account-session a:hover, .account-session button:hover { color: var(--teal-dark); }
 .auth-links a:last-child { padding: 7px 10px; border: 1px solid var(--line); border-radius: 3px; color: var(--ink); }
 .account-session { min-width: 0; display: flex; align-items: center; gap: 9px; }
+.account-session form { margin: 0; }
+.account-session button { padding: 0; border: 0; background: transparent; cursor: pointer; }
 .account-session > span { padding: 6px 8px; border: 1px solid var(--accent-border); background: var(--mist); color: var(--teal-dark); font-size: 10px; font-weight: 800; }
 .account-link { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .primary-button, .submit-button { border: 0; cursor: pointer; color: var(--paper); background: var(--ink); font-weight: 700; }
@@ -264,12 +266,23 @@ footer > span { text-align: right; font: 600 9px/1 var(--font-geist-mono), monos
 .auth-benefits span { color: var(--teal-dark); font: 700 9px/1 var(--font-geist-mono), monospace; }
 .auth-footnote { margin-top: 20px; display: flex; justify-content: center; gap: 7px; color: var(--muted); font-size: 12px; }
 .auth-footnote a { color: var(--teal-dark); font-weight: 750; }
+.auth-form { margin-top: 28px; display: grid; gap: 16px; }
+.auth-form label { display: grid; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 750; }
+.auth-form input { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 3px; outline: none; background: var(--surface); color: var(--ink); font-size: 14px; }
+.auth-form input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--accent-ring); }
+.auth-form .auth-primary { width: 100%; margin-top: 4px; border: 0; cursor: pointer; font-size: 14px; }
+.auth-form .auth-primary:disabled { opacity: .6; cursor: wait; }
+.auth-error { margin: 0; padding: 11px 12px; border-left: 3px solid var(--danger); background: var(--surface-soft); color: var(--danger); font-size: 12px; }
+.auth-security { margin-top: 18px !important; display: flex; align-items: center; gap: 8px; color: var(--subtle) !important; font-size: 10px !important; }
+.auth-security span { color: var(--teal-dark); }
 
 .profile-page { min-height: 100vh; background: var(--paper); }
 .profile-topbar { min-height: 76px; padding: 14px clamp(22px, 5vw, 76px); display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); background: var(--topbar); }
 .profile-topbar nav { display: flex; align-items: center; gap: 20px; }
-.profile-topbar nav a { color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
-.profile-topbar nav a:hover { color: var(--teal-dark); }
+.profile-topbar nav a, .profile-topbar nav button { color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; }
+.profile-topbar nav a:hover, .profile-topbar nav button:hover { color: var(--teal-dark); }
+.profile-topbar nav form { margin: 0; }
+.profile-topbar nav button { padding: 0; border: 0; background: transparent; cursor: pointer; }
 .profile-hero { padding: clamp(48px, 8vw, 100px) clamp(22px, 7vw, 110px); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 50px; border-bottom: 1px solid var(--ink); background: var(--surface); }
 .profile-identity { min-width: 0; display: flex; align-items: center; gap: clamp(20px, 4vw, 42px); }
 .profile-avatar { width: clamp(82px, 12vw, 140px); aspect-ratio: 1; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--paper); font: 750 clamp(34px, 6vw, 64px)/1 var(--font-geist-mono), monospace; }
@@ -333,7 +346,7 @@ footer > span { text-align: right; font: 600 9px/1 var(--font-geist-mono), monos
   .theme-switcher button { min-width: 27px; height: 28px; padding-inline: 6px; }
   .admin-login, .admin-session, .theme-switcher { display: none; }
   .auth-links, .account-session { display: flex; }
-  .auth-links a:last-child, .account-session > span, .account-session > a:last-child { display: none; }
+  .auth-links a:last-child, .account-session > span, .account-session > form { display: none; }
   .account-link { max-width: 72px; }
   .library { padding-inline: 12px; }
   .section-heading { align-items: stretch; flex-direction: column; }

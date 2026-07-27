@@ -82,7 +82,20 @@ export async function ensureStorage() {
     DB.prepare(`CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
+      username TEXT UNIQUE,
       display_name TEXT NOT NULL,
+      password_hash TEXT,
+      password_salt TEXT,
+      failed_attempts INTEGER NOT NULL DEFAULT 0,
+      locked_until INTEGER,
+      is_admin INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    )`),
+    DB.prepare(`CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at INTEGER NOT NULL,
       created_at INTEGER NOT NULL
     )`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS shares (
@@ -103,6 +116,24 @@ export async function ensureStorage() {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     )`),
+  ]);
+  const userColumns = await DB.prepare("PRAGMA table_info(users)").all<{ name: string }>();
+  const userColumnNames = new Set(userColumns.results.map((column: { name: string }) => column.name));
+  const userColumnMigrations = [
+    ["username", "ALTER TABLE users ADD COLUMN username TEXT"],
+    ["password_hash", "ALTER TABLE users ADD COLUMN password_hash TEXT"],
+    ["password_salt", "ALTER TABLE users ADD COLUMN password_salt TEXT"],
+    ["failed_attempts", "ALTER TABLE users ADD COLUMN failed_attempts INTEGER NOT NULL DEFAULT 0"],
+    ["locked_until", "ALTER TABLE users ADD COLUMN locked_until INTEGER"],
+    ["is_admin", "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"],
+  ] as const;
+  for (const [column, sql] of userColumnMigrations) {
+    if (!userColumnNames.has(column)) await DB.prepare(sql).run();
+  }
+  await DB.batch([
+    DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users (username)"),
+    DB.prepare("CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id)"),
+    DB.prepare("CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions (expires_at)"),
   ]);
   const shareColumns = await DB.prepare("PRAGMA table_info(shares)").all<{ name: string }>();
   if (!shareColumns.results.some((column: { name: string }) => column.name === "owner_user_id")) {

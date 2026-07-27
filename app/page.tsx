@@ -21,7 +21,7 @@ type Share = {
 type SessionStatus = {
   authenticated: boolean;
   isAdmin: boolean;
-  email: string | null;
+  username: string | null;
   displayName: string | null;
 };
 
@@ -150,12 +150,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/admin/session", { cache: "no-store" })
+    fetch("/api/auth/session", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) throw new Error("无法读取管理员状态");
         setSessionStatus((await response.json()) as SessionStatus);
       })
-      .catch(() => setSessionStatus({ authenticated: false, isAdmin: false, email: null, displayName: null }));
+      .catch(() => setSessionStatus({ authenticated: false, isAdmin: false, username: null, displayName: null }));
   }, []);
 
   useEffect(() => {
@@ -352,10 +352,12 @@ export default function Home() {
           {sessionStatus?.authenticated ? (
             <div className="account-session">
               {sessionStatus.isAdmin && <span>管理员</span>}
-              <a className="account-link" href="/profile" title={sessionStatus.email ?? undefined}>
+              <a className="account-link" href="/profile" title={sessionStatus.username ?? undefined}>
                 {sessionStatus.displayName ?? "个人中心"}
               </a>
-              <a href="/signout-with-chatgpt?return_to=%2F">退出</a>
+              <form action="/api/auth/logout" method="post">
+                <button type="submit">退出</button>
+              </form>
             </div>
           ) : (
             <nav className="auth-links" aria-label="用户账户">

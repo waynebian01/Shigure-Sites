@@ -1,14 +1,12 @@
-import { chatGPTSignOutPath, requireChatGPTUser } from "../chatgpt-auth";
+import { requireCurrentUser } from "../../lib/auth";
 import { listSharesByOwner, type ShareRecord } from "../../lib/shares";
-import { ensureUser } from "../../lib/users";
 import ProfileShares from "./profile-shares";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const authenticatedUser = await requireChatGPTUser("/profile");
-  const profile = await ensureUser(authenticatedUser);
+  const profile = await requireCurrentUser();
   const shares = await listSharesByOwner(profile.id);
   const totalBytes = shares.reduce(
     (sum: number, share: ShareRecord) => sum + share.size,
@@ -26,7 +24,9 @@ export default async function ProfilePage() {
         </Link>
         <nav aria-label="个人中心导航">
           <Link href="/">公共分享库</Link>
-          <a href={chatGPTSignOutPath("/")}>退出</a>
+          <form action="/api/auth/logout" method="post">
+            <button type="submit">退出</button>
+          </form>
         </nav>
       </header>
 
@@ -38,7 +38,7 @@ export default async function ProfilePage() {
           <div>
             <span className="auth-eyebrow">PERSONAL ARCHIVE</span>
             <h1 id="profile-title">{profile.displayName}</h1>
-            <p>{profile.email}</p>
+            <p>@{profile.username}</p>
           </div>
         </div>
         <div className="profile-stats">

@@ -1,7 +1,5 @@
 import { getShare, storageBindings } from "../../../../lib/shares";
-import { getChatGPTUser } from "../../../chatgpt-auth";
-import { isAdminEmail } from "../../../../lib/admin";
-import { ensureUser } from "../../../../lib/users";
+import { getCurrentUser } from "../../../../lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +20,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const user = await getChatGPTUser();
+    const user = await getCurrentUser();
     if (!user) {
       return Response.json({ error: "请先登录" }, { status: 401 });
     }
@@ -32,8 +30,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
     if (!share) {
       return Response.json({ error: "没有找到这份分享" }, { status: 404 });
     }
-    const profile = await ensureUser(user);
-    if (!isAdminEmail(user.email) && share.ownerUserId !== profile.id) {
+    if (!user.isAdmin && share.ownerUserId !== user.id) {
       return Response.json({ error: "你只能删除自己分享的 JSON" }, { status: 403 });
     }
 
