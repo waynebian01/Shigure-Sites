@@ -5,6 +5,7 @@ import { seedModules } from "./seed-modules";
 export type ShareRecord = {
   id: string;
   filename: string;
+  sharer: string;
   author: string;
   version: string;
   profession: string;
@@ -147,6 +148,7 @@ function mapRow(row: Record<string, unknown>): ShareRecord {
   return {
     id: String(row.id),
     filename: String(row.filename),
+    sharer: row.sharer ? String(row.sharer) : "未知",
     author: String(row.author),
     version: String(row.version),
     profession: String(row.profession),
@@ -162,23 +164,35 @@ function mapRow(row: Record<string, unknown>): ShareRecord {
 export async function listShares() {
   await ensureStorage();
   const { DB } = bindings();
-  const result = await DB.prepare("SELECT * FROM shares ORDER BY created_at DESC LIMIT 100").all();
+  const result = await DB.prepare(`SELECT shares.*, users.display_name AS sharer
+    FROM shares
+    LEFT JOIN users ON users.id = shares.owner_user_id
+    ORDER BY shares.created_at DESC
+    LIMIT 100`).all();
   return result.results.map((row: unknown) => mapRow(row as Record<string, unknown>));
 }
 
 export async function getShare(id: string) {
   await ensureStorage();
   const { DB } = bindings();
-  const row = await DB.prepare("SELECT * FROM shares WHERE id = ?").bind(id).first<Record<string, unknown>>();
+  const row = await DB.prepare(`SELECT shares.*, users.display_name AS sharer
+    FROM shares
+    LEFT JOIN users ON users.id = shares.owner_user_id
+    WHERE shares.id = ?`)
+    .bind(id)
+    .first<Record<string, unknown>>();
   return row ? mapRow(row) : null;
 }
 
 export async function listSharesByOwner(ownerUserId: string) {
   await ensureStorage();
   const { DB } = bindings();
-  const result = await DB.prepare(
-    "SELECT * FROM shares WHERE owner_user_id = ? ORDER BY created_at DESC LIMIT 100",
-  ).bind(ownerUserId).all();
+  const result = await DB.prepare(`SELECT shares.*, users.display_name AS sharer
+    FROM shares
+    LEFT JOIN users ON users.id = shares.owner_user_id
+    WHERE shares.owner_user_id = ?
+    ORDER BY shares.created_at DESC
+    LIMIT 100`).bind(ownerUserId).all();
   return result.results.map((row: unknown) => mapRow(row as Record<string, unknown>));
 }
 

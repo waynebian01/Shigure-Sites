@@ -9,6 +9,7 @@ import { wowClasses, wowClassSpecializations } from "../lib/wow-taxonomy";
 type Share = {
   id: string;
   filename: string;
+  sharer: string;
   author: string;
   version: string;
   profession: string;
@@ -490,6 +491,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="file-details">
+                  <dl><dt>分享者</dt><dd>{selected.sharer || "未知"}</dd></dl>
                   <dl><dt>作者</dt><dd>{selected.author}</dd></dl>
                   <dl><dt>版本</dt><dd>{selected.version}</dd></dl>
                   <dl><dt>职业</dt><dd>{selected.profession}</dd></dl>

@@ -181,7 +181,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .delete-button { padding: 12px 15px; border: 1px solid var(--danger-border); border-radius: 4px; background: transparent; color: var(--danger); cursor: pointer; font-size: 13px; font-weight: 750; }
 .delete-button:hover { background: var(--danger); color: var(--paper); }
-.file-details { display: grid; grid-template-columns: repeat(4, 1fr); margin: 34px 0 25px; border-block: 1px solid var(--line); }
+.file-details { display: grid; grid-template-columns: repeat(5, 1fr); margin: 34px 0 25px; border-block: 1px solid var(--line); }
 .file-details dl { margin: 0; padding: 16px 14px; border-right: 1px solid var(--line); }
 .file-details dl:first-child { padding-left: 0; }
 .file-details dl:last-child { border-right: 0; }
@@ -328,8 +328,9 @@ footer > span { text-align: right; font: 600 9px/1 var(--font-geist-mono), monos
   .share-tabs { max-height: 365px; overflow: auto; border-right: 0; border-bottom: 1px solid var(--ink); }
   .preview-pane { overflow: visible; }
   .file-details { grid-template-columns: 1fr 1fr; }
-  .file-details dl:nth-child(2) { border-right: 0; }
-  .file-details dl:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
+  .file-details dl { border-bottom: 1px solid var(--line); }
+  .file-details dl:nth-child(even) { border-right: 0; }
+  .file-details dl:last-child { border-bottom: 0; }
   footer { grid-template-columns: 1fr; text-align: center; }
   footer > div { justify-content: center; }
   footer > span { text-align: center; }
