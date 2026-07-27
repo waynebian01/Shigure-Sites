@@ -39,8 +39,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Shigure · JSON 小文件分享站";
-  const description = "上传、浏览、查看与下载社区分享的轻量 JSON 文件。";
+  const title = "Shigure · 你的配置，由你定义";
+  const description = "上传、检索与下载社区分享的 JSON 模块，把每一次构筑变成下一段传奇的起点。";
   return {
     metadataBase: new URL(origin),
     title,
@@ -52,8 +52,8 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
       apple: [{ url: "/brand/arasaka-icon-128.png", sizes: "128x128", type: "image/png" }],
     },
-    openGraph: { title, description, type: "website", url: origin, images: [{ url: `${origin}/og.png`, width: 1734, height: 907, alt: "Shigure JSON 小文件分享站" }] },
-    twitter: { card: "summary_large_image", title, description, images: [`${origin}/og.png`] },
+    openGraph: { title, description, type: "website", url: origin },
+    twitter: { card: "summary", title, description },
   };
 }
 
