@@ -44,7 +44,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         <span className="brand-mark" aria-hidden="true">
           <img src="/brand/arasaka-icon-64.png" width={64} height={64} alt="" />
         </span>
-        <span>Shigure</span>
+        <span>SHIGURE</span>
       </Link>
       <section className="auth-card" aria-labelledby="auth-title">
         <span className="auth-eyebrow">{isRegister ? "CREATE ACCOUNT" : "WELCOME BACK"}</span>
@@ -102,10 +102,6 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           </button>
         </form>
 
-        <p className="auth-security">
-          <span aria-hidden="true">◆</span>
-          密码会经过加盐哈希处理，Shigure 不保存明文密码。
-        </p>
         <div className="auth-footnote">
           <span>{isRegister ? "已有账号？" : "还没有账号？"}</span>
           <Link href={isRegister ? "/login" : "/register"}>
