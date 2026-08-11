@@ -632,14 +632,20 @@ img { display: block; }
   z-index: 2;
   top: 0;
   min-height: 40px;
-  padding: 0 15px;
-  display: flex;
+  padding: 0 14px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 4.5rem 3.5rem;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   background: var(--ink);
   color: #aeb3b6;
   font: 700 9px/1 var(--font-geist-mono), monospace;
   letter-spacing: .08em;
+}
+
+.list-label > span:nth-child(3),
+.list-label > span:nth-child(4) {
+  text-align: right;
 }
 
 .share-tab {
@@ -649,7 +655,7 @@ img { display: block; }
   border: 0;
   border-bottom: 1px solid var(--line);
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) 4.5rem 3.5rem;
   align-items: center;
   gap: 12px;
   background: transparent;
@@ -678,7 +684,18 @@ img { display: block; }
 .tab-copy strong { display: block; overflow: hidden; font: 700 12px/1.35 var(--font-geist-mono), monospace; text-overflow: ellipsis; white-space: nowrap; }
 .tab-copy small { display: block; margin-top: 6px; overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .share-tab[data-active="true"] .tab-copy small { color: #454545; }
-.tab-size { color: var(--subtle); font: 700 9px/1 var(--font-geist-mono), monospace; }
+.tab-downloads,
+.tab-size {
+  color: var(--subtle);
+  font: 700 9px/1 var(--font-geist-mono), monospace;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.share-tab[data-active="true"] .tab-downloads,
+.share-tab[data-active="true"] .tab-size {
+  color: #454545;
+}
 
 .empty-state, .preview-empty {
   min-height: 260px;

@@ -14,6 +14,7 @@ export type ShareRecord = {
   specialization: string;
   description: string;
   size: number;
+  downloadCount: number;
   r2Key: string;
   createdAt: number;
   expiresAt: number | null;
@@ -88,7 +89,8 @@ export async function ensureStorage() {
       r2_key TEXT NOT NULL,
       created_at INTEGER NOT NULL,
       expires_at INTEGER,
-      owner_user_id TEXT REFERENCES users(id)
+      owner_user_id TEXT REFERENCES users(id),
+      download_count INTEGER NOT NULL DEFAULT 0
     )`),
     DB.prepare("CREATE INDEX IF NOT EXISTS shares_created_at_idx ON shares (created_at DESC)"),
     DB.prepare(`CREATE TABLE IF NOT EXISTS app_metadata (
@@ -115,11 +117,15 @@ export async function ensureStorage() {
     DB.prepare("CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions (expires_at)"),
   ]);
   const shareColumns = await DB.prepare("PRAGMA table_info(shares)").all<{ name: string }>();
-  if (!shareColumns.results.some((column: { name: string }) => column.name === "owner_user_id")) {
+  const shareColumnNames = new Set(shareColumns.results.map((column: { name: string }) => column.name));
+  if (!shareColumnNames.has("owner_user_id")) {
     await DB.prepare("ALTER TABLE shares ADD COLUMN owner_user_id TEXT REFERENCES users(id)").run();
   }
-  if (!shareColumns.results.some((column: { name: string }) => column.name === "expires_at")) {
+  if (!shareColumnNames.has("expires_at")) {
     await DB.prepare("ALTER TABLE shares ADD COLUMN expires_at INTEGER").run();
+  }
+  if (!shareColumnNames.has("download_count")) {
+    await DB.prepare("ALTER TABLE shares ADD COLUMN download_count INTEGER NOT NULL DEFAULT 0").run();
   }
   await DB.batch([
     DB.prepare("CREATE INDEX IF NOT EXISTS shares_owner_user_id_idx ON shares (owner_user_id, created_at DESC)"),
@@ -158,6 +164,7 @@ function mapRow(row: Record<string, unknown>): ShareRecord {
     specialization: String(row.specialization),
     description: String(row.description),
     size: Number(row.size),
+    downloadCount: Number(row.download_count ?? 0),
     r2Key: String(row.r2_key),
     createdAt: Number(row.created_at),
     expiresAt: row.expires_at ? Number(row.expires_at) : null,
@@ -186,6 +193,14 @@ export async function getShare(id: string) {
     .bind(id)
     .first<Record<string, unknown>>();
   return row ? mapRow(row) : null;
+}
+
+export async function incrementDownloadCount(id: string) {
+  await ensureStorage();
+  const { DB } = bindings();
+  await DB.prepare("UPDATE shares SET download_count = download_count + 1 WHERE id = ?")
+    .bind(id)
+    .run();
 }
 
 export async function listSharesByOwner(ownerUserId: string) {
