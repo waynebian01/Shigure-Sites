@@ -479,6 +479,12 @@ img { display: block; }
   gap: 24px;
 }
 
+.library-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .section-heading > div, .profile-section-heading > div {
   display: flex;
   align-items: baseline;
@@ -1146,6 +1152,8 @@ footer > span { color: #62676b; font: 700 9px/1 var(--font-geist-mono), monospac
   }
   .hero-project-links strong { font-size: 10px; }
   .section-heading { align-items: stretch; flex-direction: column; }
+  .library-actions { align-items: stretch; flex-direction: column; gap: 12px; }
+  .library-actions .primary-button { width: 100%; }
   .section-heading h2, .profile-section-heading h2 { font-size: 46px; }
   .section-heading h2 { font-size: 23px; }
   .search-box { width: 100%; }

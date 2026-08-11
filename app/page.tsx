@@ -375,12 +375,6 @@ export default function Home() {
               <a href="/register">注册</a>
             </nav>
           )}
-          <button className="primary-button" type="button" onClick={() => {
-            setNotice("");
-            setIsModalOpen(true);
-          }}>
-            <span aria-hidden="true">＋</span> 分享 JSON
-          </button>
         </div>
       </header>
 
@@ -404,11 +398,19 @@ export default function Home() {
           <div>
             <h2 id="library-title">模型库</h2>
           </div>
-          <label className="search-box">
-            <span aria-hidden="true">⌕</span>
-            <span className="sr-only">搜索分享</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索文件、作者或专精" />
-          </label>
+          <div className="library-actions">
+            <button className="primary-button" type="button" onClick={() => {
+              setNotice("");
+              setIsModalOpen(true);
+            }}>
+              <span aria-hidden="true">＋</span> 分享 JSON
+            </button>
+            <label className="search-box">
+              <span aria-hidden="true">⌕</span>
+              <span className="sr-only">搜索分享</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索文件、作者或专精" />
+            </label>
+          </div>
         </div>
 
         <div className="taxonomy-filters">
