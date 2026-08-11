@@ -43,6 +43,7 @@ export const shares = sqliteTable(
     createdAt: integer("created_at").notNull(),
     expiresAt: integer("expires_at"),
     ownerUserId: text("owner_user_id").references(() => users.id),
+    downloadCount: integer("download_count").notNull().default(0),
   },
   (table) => [
     index("shares_owner_user_id_idx").on(table.ownerUserId, table.createdAt),

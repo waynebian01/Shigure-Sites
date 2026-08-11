@@ -16,6 +16,7 @@ type Share = {
   specialization: string;
   description: string;
   size: number;
+  downloadCount: number;
   createdAt: string;
 };
 
@@ -375,12 +376,6 @@ export default function Home() {
               <a href="/register">注册</a>
             </nav>
           )}
-          <button className="primary-button" type="button" onClick={() => {
-            setNotice("");
-            setIsModalOpen(true);
-          }}>
-            <span aria-hidden="true">＋</span> 分享 JSON
-          </button>
         </div>
       </header>
 
@@ -404,11 +399,19 @@ export default function Home() {
           <div>
             <h2 id="library-title">模型库</h2>
           </div>
-          <label className="search-box">
-            <span aria-hidden="true">⌕</span>
-            <span className="sr-only">搜索分享</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索文件、作者或专精" />
-          </label>
+          <div className="library-actions">
+            <button className="primary-button" type="button" onClick={() => {
+              setNotice("");
+              setIsModalOpen(true);
+            }}>
+              <span aria-hidden="true">＋</span> 分享 JSON
+            </button>
+            <label className="search-box">
+              <span aria-hidden="true">⌕</span>
+              <span className="sr-only">搜索分享</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索文件、作者或专精" />
+            </label>
+          </div>
         </div>
 
         <div className="taxonomy-filters">
@@ -465,7 +468,12 @@ export default function Home() {
 
         <div className="explorer-shell">
           <div className="share-tabs" role="tablist" aria-label="分享内容">
-            <div className="list-label"><span>文件 / 分享者</span><span>大小</span></div>
+            <div className="list-label">
+              <span aria-hidden="true" />
+              <span>文件 / 分享者</span>
+              <span>下载次数</span>
+              <span>大小</span>
+            </div>
             {isLoading ? (
               <div className="empty-state">正在整理分享库…</div>
             ) : visibleShares.length === 0 ? (
@@ -485,6 +493,7 @@ export default function Home() {
                   <strong>{item.filename}</strong>
                   <small>{item.author} · {item.specialization}</small>
                 </span>
+                <span className="tab-downloads">{item.downloadCount ?? 0}</span>
                 <span className="tab-size">{formatSize(item.size)}</span>
               </button>
             ))}
@@ -499,7 +508,20 @@ export default function Home() {
                     <h3>{selected.filename}</h3>
                   </div>
                   <div className="preview-actions">
-                    <a className="download-button" href={`/api/shares/${selected.id}/download`} download>
+                    <a
+                      className="download-button"
+                      href={`/api/shares/${selected.id}/download`}
+                      download
+                      onClick={() => {
+                        setShares((prev) =>
+                          prev.map((share) =>
+                            share.id === selected.id
+                              ? { ...share, downloadCount: (share.downloadCount ?? 0) + 1 }
+                              : share,
+                          ),
+                        );
+                      }}
+                    >
                       下载 <span aria-hidden="true">↓</span>
                     </a>
                     {sessionStatus?.isAdmin && (

@@ -1,0 +1,1 @@
+ALTER TABLE `shares` ADD `download_count` integer DEFAULT 0 NOT NULL;

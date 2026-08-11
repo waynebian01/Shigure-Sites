@@ -1,4 +1,4 @@
-import { getShare, storageBindings } from "../../../../../lib/shares";
+import { getShare, incrementDownloadCount, storageBindings } from "../../../../../lib/shares";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     if (!share) return new Response("Not found", { status: 404 });
     const object = await storageBindings().FILES.get(share.r2Key);
     if (!object) return new Response("Not found", { status: 404 });
+    await incrementDownloadCount(id);
     const encoded = encodeURIComponent(share.filename);
     return new Response(object.body, {
       headers: {
