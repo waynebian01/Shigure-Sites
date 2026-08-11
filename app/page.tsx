@@ -379,38 +379,31 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="hero-rail" aria-label="Shigure network status">
-        <nav className="project-links hero-project-links" aria-label="获取项目">
-          <a href="https://github.com/waynebian01/Fuyutsui" target="_blank" rel="noopener noreferrer">
-            <span>01</span>
-            <strong>获取 Fuyutsui</strong>
-            <i aria-hidden="true">↗</i>
-          </a>
-          <a href="https://github.com/waynebian01/Shigure" target="_blank" rel="noopener noreferrer">
-            <span>02</span>
-            <strong>获取 Shigure</strong>
-            <i aria-hidden="true">↗</i>
-          </a>
-        </nav>
-      </section>
-
-      <section className="library" id="top" aria-labelledby="library-title">
-        <div className="section-heading">
-          <div>
-            <h2 id="library-title">模型库</h2>
-          </div>
+      <section className="library" id="top" aria-label="模型库">
+        <div className="section-heading library-toolbar">
+          <label className="search-box">
+            <span aria-hidden="true">⌕</span>
+            <span className="sr-only">搜索分享</span>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索文件、作者或专精" />
+          </label>
           <div className="library-actions">
+            <a
+              className="get-shigure"
+              href="https://github.com/waynebian01/Shigure"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>01</span>
+              <strong>获取 Shigure</strong>
+              <i aria-hidden="true">↗</i>
+            </a>
             <button className="primary-button" type="button" onClick={() => {
               setNotice("");
               setIsModalOpen(true);
             }}>
-              <span aria-hidden="true">＋</span> 分享 JSON
+              <span aria-hidden="true">＋</span>
+              <span>分享 JSON</span>
             </button>
-            <label className="search-box">
-              <span aria-hidden="true">⌕</span>
-              <span className="sr-only">搜索分享</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索文件、作者或专精" />
-            </label>
           </div>
         </div>
 
@@ -468,12 +461,6 @@ export default function Home() {
 
         <div className="explorer-shell">
           <div className="share-tabs" role="tablist" aria-label="分享内容">
-            <div className="list-label">
-              <span aria-hidden="true" />
-              <span>文件 / 分享者</span>
-              <span>下载次数</span>
-              <span>大小</span>
-            </div>
             {isLoading ? (
               <div className="empty-state">正在整理分享库…</div>
             ) : visibleShares.length === 0 ? (
@@ -488,13 +475,13 @@ export default function Home() {
                 aria-selected={selectedId === item.id}
                 onClick={() => setSelectedId(item.id)}
               >
-                <span className="file-icon">{'{ }'}</span>
                 <span className="tab-copy">
                   <strong>{item.filename}</strong>
-                  <small>{item.author} · {item.specialization}</small>
+                  <small>
+                    <span>作者: {item.author || "未知"}</span>
+                    <span>下载次数: {item.downloadCount ?? 0}</span>
+                  </small>
                 </span>
-                <span className="tab-downloads">{item.downloadCount ?? 0}</span>
-                <span className="tab-size">{formatSize(item.size)}</span>
               </button>
             ))}
           </div>
