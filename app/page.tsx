@@ -109,6 +109,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [fileHeader, setFileHeader] = useState<ModuleHeader | null>(null);
   const [fileMetadata, setFileMetadata] = useState<ModuleMetadata | null>(null);
+  const [isFileDragging, setIsFileDragging] = useState(false);
   const [selectedMetadata, setSelectedMetadata] = useState<ModuleMetadata | null>(null);
   const [themePreference, setThemePreference] = useState<ThemePreference>("system");
   const formRef = useRef<HTMLFormElement>(null);
@@ -606,7 +607,19 @@ export default function Home() {
               <div className="form-grid">
                 <label className="full-width">描述<textarea name="description" required maxLength={240} rows={3} placeholder="简单说说这个文件能做什么" /></label>
               </div>
-              <label className="file-drop" data-has-file={Boolean(file)}>
+              <label
+                className="file-drop"
+                data-has-file={Boolean(file)}
+                data-dragging={isFileDragging}
+                onDragEnter={(event) => { event.preventDefault(); setIsFileDragging(true); }}
+                onDragOver={(event) => event.preventDefault()}
+                onDragLeave={(event) => { if (event.currentTarget === event.target) setIsFileDragging(false); }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setIsFileDragging(false);
+                  void handleFileSelection(event.dataTransfer.files[0] ?? null);
+                }}
+              >
                 <input type="file" name="file" accept="application/json,.json" required onChange={(event) => void handleFileSelection(event.target.files?.[0] ?? null)} />
                 <span className="upload-symbol" aria-hidden="true">↥</span>
                 <strong>{file ? file.name : "选择 JSON 文件"}</strong>

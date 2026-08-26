@@ -960,6 +960,7 @@ footer > span { color: #62676b; font: 700 9px/1 var(--font-geist-mono), monospac
 }
 
 .file-drop:hover, .file-drop[data-has-file="true"] { border-color: var(--cyan-dark); background: var(--accent-soft); }
+.file-drop[data-dragging="true"] { border-color: var(--cyan); background: var(--accent-soft); }
 .file-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .upload-symbol { color: var(--cyan-dark); font-size: 30px; line-height: 1; }
 .file-drop strong { margin-top: 8px; font-size: 12px; }
