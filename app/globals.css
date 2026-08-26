@@ -1169,9 +1169,14 @@ footer > span { color: #62676b; font: 700 9px/1 var(--font-geist-mono), monospac
 .profile-share-copy > span { color: var(--cyan-dark); font-size: 9px; font-weight: 900; letter-spacing: .08em; }
 .profile-share-copy h3 { margin: 7px 0; overflow: hidden; font: 800 clamp(17px, 2vw, 24px)/1.25 var(--font-geist-mono), monospace; text-overflow: ellipsis; white-space: nowrap; }
 .profile-share-copy p { margin: 0 0 9px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.profile-description-edit, .profile-description-editor button { border: 0; padding: 0; background: none; color: var(--cyan-dark); cursor: pointer; font-size: 10px; font-weight: 900; }
+.profile-description-edit { display: block; margin: -2px 0 7px; }
+.profile-description-editor { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.profile-description-editor input { min-width: 0; flex: 1; border: 1px solid var(--line-strong); padding: 7px 8px; background: var(--surface); color: inherit; font: inherit; }
 .profile-share-copy small { color: var(--subtle); font-size: 9px; }
 .profile-share-actions { display: flex; align-items: center; gap: 8px; }
-.profile-share-actions a, .profile-share-actions button { padding: 10px 14px; border: 1px solid var(--line-strong); background: transparent; color: inherit; cursor: pointer; font-size: 11px; font-weight: 900; text-decoration: none; }
+.profile-share-actions a, .profile-share-actions button, .profile-share-actions label { padding: 10px 14px; border: 1px solid var(--line-strong); background: transparent; color: inherit; cursor: pointer; font-size: 11px; font-weight: 900; text-decoration: none; }
+.profile-share-actions label:hover { background: var(--yellow); color: var(--on-accent); }
 .profile-share-actions a:hover { background: var(--yellow); color: var(--on-accent); }
 .profile-share-actions button { border-color: var(--danger-border); color: var(--danger); }
 .profile-share-actions button:disabled { opacity: .5; cursor: wait; }
