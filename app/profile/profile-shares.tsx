@@ -31,7 +31,48 @@ function formatDate(value: number) {
 export default function ProfileShares({ initialShares }: { initialShares: ProfileShare[] }) {
   const [shares, setShares] = useState(initialShares);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingDescriptionId, setEditingDescriptionId] = useState<string | null>(null);
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [savingDescriptionId, setSavingDescriptionId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+
+  async function updateShare(shareId: string, file: File) {
+    setUpdatingId(shareId);
+    setNotice("");
+    try {
+      const form = new FormData();
+      form.set("file", file);
+      const response = await fetch(`/api/shares/${shareId}`, { method: "PUT", body: form });
+      const payload = (await response.json()) as { updated?: boolean; error?: string };
+      if (!response.ok || !payload.updated) throw new Error(payload.error || "更新失败");
+      window.location.reload();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "更新失败，请稍后重试。");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function saveDescription(shareId: string) {
+    setSavingDescriptionId(shareId);
+    setNotice("");
+    try {
+      const response = await fetch(`/api/shares/${shareId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: descriptionDraft }),
+      });
+      const payload = (await response.json()) as { updated?: boolean; error?: string };
+      if (!response.ok || !payload.updated) throw new Error(payload.error || "描述更新失败");
+      setShares((current) => current.map((share) => share.id === shareId ? { ...share, description: descriptionDraft.trim() } : share));
+      setEditingDescriptionId(null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "描述更新失败，请稍后重试。");
+    } finally {
+      setSavingDescriptionId(null);
+    }
+  }
 
   async function deleteShare(share: ProfileShare) {
     if (!window.confirm(`确认删除 ${share.filename}？此操作无法撤销。`)) return;
@@ -75,10 +116,27 @@ export default function ProfileShares({ initialShares }: { initialShares: Profil
               <div className="profile-share-copy">
                 <span>{share.profession} · {share.specialization}</span>
                 <h3>{share.filename}</h3>
-                <p>{share.description}</p>
+                {editingDescriptionId === share.id ? (
+                  <div className="profile-description-editor">
+                    <input value={descriptionDraft} onChange={(event) => setDescriptionDraft(event.target.value)} aria-label="文件描述" />
+                    <button type="button" disabled={savingDescriptionId === share.id} onClick={() => void saveDescription(share.id)}>保存</button>
+                    <button type="button" disabled={savingDescriptionId === share.id} onClick={() => setEditingDescriptionId(null)}>取消</button>
+                  </div>
+                ) : (
+                  <>
+                    <button className="profile-description-edit" type="button" onClick={() => { setEditingDescriptionId(share.id); setDescriptionDraft(share.description); }}>修改描述</button>
+                    <p>{share.description}</p>
+                  </>
+                )}
                 <small>{share.author} · {formatSize(share.size)} · {formatDate(share.createdAt)}</small>
               </div>
               <div className="profile-share-actions">
+                <input id={`update-${share.id}`} type="file" accept="application/json,.json" hidden disabled={updatingId === share.id} onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void updateShare(share.id, file);
+                  event.target.value = "";
+                }} />
+                <label htmlFor={`update-${share.id}`} className="profile-update-button">{updatingId === share.id ? "更新中…" : "更新"}</label>
                 <a href={`/api/shares/${share.id}/download`} download>下载</a>
                 <button
                   type="button"
